@@ -262,6 +262,7 @@ def get_orders():
         return jsonify(user_orders)
 
 
+
 @app.route('/api/orders', methods=['POST'])
 def create_order():
     global order_counter

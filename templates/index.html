@@ -1269,6 +1269,37 @@
                 isUpdating = false;
             });
         }
+
+
+
+        
+        function actualizarPedidos() {
+            fetch('/api/orders', { cache: "no-store" })
+                .then(res => res.json())
+                .then(data => {
+                    let html = "";
+                    data.forEach(p => {
+                        html += `
+                            <div>
+                                <b>Pedido #${p.id}</b><br>
+                                Estado: ${p.status}<br>
+                                Cliente: ${p.username}
+                                <hr>
+                            </div>
+                        `;
+                    });
+                    document.getElementById("lista-pedidos").innerHTML = html;
+                });
+        }
+
+        // ejecutar apenas entra
+        actualizarPedidos();
+
+        // y luego cada 3 segundos
+        setInterval(actualizarPedidos, 3000);
+
+
+
         
         // Loop de actualización continua usando requestAnimationFrame
         function continuousUpdate() {
