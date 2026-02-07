@@ -907,6 +907,70 @@
             }).join('');
         }
 
+
+
+
+                // ============================================
+        // PARCHE PARA ACTUALIZACIÓN EN MÓVILES
+        // ============================================
+        // Agregar este código AL FINAL del <script> en index.html
+        // ANTES del cierre
+
+        // Detectar cuando la página vuelve a estar visible
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                console.log('📱 Página visible - Forzando actualización');
+                // Forzar actualización inmediata cuando la página vuelve a estar visible
+                loadOrdersFromServer();
+                if (USER_ROLE === 'admin') {
+                    loadAdminOrders();
+                }
+            }
+        });
+
+        // Detectar cuando la ventana vuelve a tener foco
+        window.addEventListener('focus', function() {
+            console.log('📱 Ventana enfocada - Forzando actualización');
+            // Forzar actualización cuando la ventana recibe foco
+            loadOrdersFromServer();
+            if (USER_ROLE === 'admin') {
+                loadAdminOrders();
+            }
+        });
+
+        // Usar requestAnimationFrame en lugar de setInterval para móviles
+        // (Los navegadores móviles respetan mejor requestAnimationFrame)
+        let lastUpdateTime = 0;
+        const UPDATE_INTERVAL = 3000; // 3 segundos
+
+        function continuousUpdate() {
+            const now = Date.now();
+            
+            if (now - lastUpdateTime >= UPDATE_INTERVAL) {
+                loadOrdersFromServer();
+                
+                if (USER_ROLE === 'admin') {
+                    const adminSection = document.getElementById('adminSection');
+                    if (adminSection && adminSection.classList.contains('active')) {
+                        loadAdminOrders();
+                    }
+                }
+                
+                lastUpdateTime = now;
+            }
+            
+            // Continuar el loop
+            requestAnimationFrame(continuousUpdate);
+        }
+
+        // Iniciar el loop de actualización continua
+        requestAnimationFrame(continuousUpdate);
+
+        console.log('✅ Sistema de actualización móvil activado');
+
+
+
+
         function updateOrderStatus(orderId, newStatus) {
             console.log(`📝 Actualizando pedido #${orderId} a estado: ${newStatus}`);
             
