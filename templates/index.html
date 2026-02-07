@@ -348,7 +348,7 @@
         let products = {};
         let prices = {};
         let isRestaurantOpen = true;
-        let previousOrders = []; // Para rastrear pedidos anteriores
+        let previousOrders = [];
 
         // Variable global para control de animaciones
         window.shouldAnimateOrders = false;
@@ -907,70 +907,6 @@
             }).join('');
         }
 
-
-
-
-                // ============================================
-        // PARCHE PARA ACTUALIZACIÓN EN MÓVILES
-        // ============================================
-        // Agregar este código AL FINAL del <script> en index.html
-        // ANTES del cierre
-
-        // Detectar cuando la página vuelve a estar visible
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden) {
-                console.log('📱 Página visible - Forzando actualización');
-                // Forzar actualización inmediata cuando la página vuelve a estar visible
-                loadOrdersFromServer();
-                if (USER_ROLE === 'admin') {
-                    loadAdminOrders();
-                }
-            }
-        });
-
-        // Detectar cuando la ventana vuelve a tener foco
-        window.addEventListener('focus', function() {
-            console.log('📱 Ventana enfocada - Forzando actualización');
-            // Forzar actualización cuando la ventana recibe foco
-            loadOrdersFromServer();
-            if (USER_ROLE === 'admin') {
-                loadAdminOrders();
-            }
-        });
-
-        // Usar requestAnimationFrame en lugar de setInterval para móviles
-        // (Los navegadores móviles respetan mejor requestAnimationFrame)
-        let lastUpdateTime = 0;
-        const UPDATE_INTERVAL = 3000; // 3 segundos
-
-        function continuousUpdate() {
-            const now = Date.now();
-            
-            if (now - lastUpdateTime >= UPDATE_INTERVAL) {
-                loadOrdersFromServer();
-                
-                if (USER_ROLE === 'admin') {
-                    const adminSection = document.getElementById('adminSection');
-                    if (adminSection && adminSection.classList.contains('active')) {
-                        loadAdminOrders();
-                    }
-                }
-                
-                lastUpdateTime = now;
-            }
-            
-            // Continuar el loop
-            requestAnimationFrame(continuousUpdate);
-        }
-
-        // Iniciar el loop de actualización continua
-        requestAnimationFrame(continuousUpdate);
-
-        console.log('✅ Sistema de actualización móvil activado');
-
-
-
-
         function updateOrderStatus(orderId, newStatus) {
             console.log(`📝 Actualizando pedido #${orderId} a estado: ${newStatus}`);
             
@@ -1301,6 +1237,90 @@
         }
 
         // ============================================
+        // SISTEMA DE ACTUALIZACIÓN PARA MÓVILES (CRÍTICO)
+        // ============================================
+        
+        // Variables de control
+        let updateIntervalId = null;
+        let updateTimeoutId = null;
+        let lastUpdateTime = 0;
+        const UPDATE_INTERVAL = 2000; // 2 segundos - MÁS FRECUENTE
+        let isUpdating = false;
+        
+        // Función de actualización mejorada
+        function forceUpdate() {
+            if (isUpdating) {
+                console.log('⏳ Actualización en progreso, esperando...');
+                return;
+            }
+            
+            isUpdating = true;
+            console.log('🔄 Forzando actualización completa...');
+            
+            Promise.all([
+                loadOrdersFromServer(),
+                USER_ROLE === 'admin' ? loadAdminOrders() : Promise.resolve()
+            ]).then(() => {
+                console.log('✅ Actualización completa finalizada');
+                isUpdating = false;
+                lastUpdateTime = Date.now();
+            }).catch(error => {
+                console.error('❌ Error en actualización:', error);
+                isUpdating = false;
+            });
+        }
+        
+        // Loop de actualización continua usando requestAnimationFrame
+        function continuousUpdate() {
+            const now = Date.now();
+            
+            if (now - lastUpdateTime >= UPDATE_INTERVAL && !isUpdating) {
+                forceUpdate();
+            }
+            
+            // Continuar el loop
+            requestAnimationFrame(continuousUpdate);
+        }
+        
+        // Detectar cuando la página vuelve a estar visible
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                console.log('📱 Página visible - Forzando actualización inmediata');
+                forceUpdate();
+            }
+        });
+        
+        // Detectar cuando la ventana vuelve a tener foco
+        window.addEventListener('focus', function() {
+            console.log('📱 Ventana enfocada - Forzando actualización inmediata');
+            forceUpdate();
+        });
+        
+        // Detectar cuando el usuario toca la pantalla (móviles)
+        let lastTouchUpdate = 0;
+        document.addEventListener('touchstart', function() {
+            const now = Date.now();
+            // Solo actualizar si han pasado más de 5 segundos desde el último toque
+            if (now - lastTouchUpdate > 5000) {
+                console.log('👆 Touch detectado - Verificando actualizaciones');
+                forceUpdate();
+                lastTouchUpdate = now;
+            }
+        }, { passive: true });
+        
+        // Detectar scroll (el usuario está activo)
+        let lastScrollUpdate = 0;
+        window.addEventListener('scroll', function() {
+            const now = Date.now();
+            // Solo actualizar si han pasado más de 10 segundos desde el último scroll
+            if (now - lastScrollUpdate > 10000) {
+                console.log('📜 Scroll detectado - Verificando actualizaciones');
+                forceUpdate();
+                lastScrollUpdate = now;
+            }
+        }, { passive: true });
+
+        // ============================================
         // INICIALIZACIÓN
         // ============================================
         
@@ -1317,14 +1337,24 @@
                 orders = data;
                 document.getElementById('orderCount').textContent = orders.length;
                 renderOrders();
+                lastUpdateTime = Date.now();
+                
+                // Iniciar loop de actualización continua
+                console.log('🚀 Iniciando sistema de actualización continua para móviles');
+                requestAnimationFrame(continuousUpdate);
             });
 
-        // Intervalos de actualización
-        setInterval(loadOrdersFromServer, 3000);
+        // Intervalos tradicionales (respaldo)
+        setInterval(() => {
+            if (!isUpdating) {
+                loadOrdersFromServer();
+            }
+        }, 3000);
+        
         setInterval(loadRestaurantStatus, 10000);
         setInterval(loadProducts, 10000);
         
-        // Verificar bandera de limpieza cada 1 SEGUNDO (solo usuarios)
+        // Verificar bandera de limpieza cada 1 segundo (solo usuarios)
         if (USER_ROLE === 'user') {
             setInterval(checkCleanFlag, 1000);
             checkCleanFlag();
@@ -1333,12 +1363,17 @@
         // Actualización de pedidos admin
         if (USER_ROLE === 'admin') {
             setInterval(() => {
-                const adminSection = document.getElementById('adminSection');
-                if (adminSection && adminSection.classList.contains('active')) {
-                    loadAdminOrders();
+                if (!isUpdating) {
+                    const adminSection = document.getElementById('adminSection');
+                    if (adminSection && adminSection.classList.contains('active')) {
+                        loadAdminOrders();
+                    }
                 }
             }, 3000);
         }
+        
+        console.log('✅ Sistema de actualización móvil completamente activado');
+        console.log('📱 Métodos activos: visibilitychange, focus, touch, scroll, requestAnimationFrame, setInterval');
     </script>
 </body>
 </html>
