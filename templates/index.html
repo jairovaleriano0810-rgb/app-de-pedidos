@@ -341,8 +341,12 @@
     <script src="{{ url_for('static', filename='notifications.js') }}"></script>
 
     <script>
+                // ============================================
+        // SISTEMA DE PEDIDOS - VERSIÓN OPTIMIZADA
+        // ============================================
+
         const USER_ROLE = "{{ role }}";
-        
+
         const cart = {};
         let orders = [];
         let products = {};
@@ -356,7 +360,7 @@
         // ============================================
         // SISTEMA DE LIMPIEZA DE PEDIDOS
         // ============================================
-        
+
         function confirmCleanAll() {
             document.getElementById('cleanConfirmModal').classList.add('show');
         }
@@ -376,9 +380,8 @@
                 
                 alert(`✅ ${data.deleted_count} pedido(s) eliminado(s) exitosamente.\nLos usuarios han sido notificados.`);
                 
-                // Recargar pedidos
-                loadOrdersFromServer();
-                loadAdminOrders();
+                // Forzar actualización
+                updateManager.update();
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -424,8 +427,8 @@
                             method: 'POST'
                         });
                         
-                        // Recargar pedidos inmediatamente
-                        loadOrdersFromServer();
+                        // Forzar actualización
+                        updateManager.update();
                     }
                 })
                 .catch(error => {
@@ -436,7 +439,7 @@
         // ============================================
         // INICIALIZAR SISTEMA DE NOTIFICACIONES
         // ============================================
-        
+
         function checkNotificationPermission() {
             const enableBtn = document.getElementById('enableNotificationsBtn');
             const indicator = document.getElementById('notificationsIndicator');
@@ -466,11 +469,10 @@
             setTimeout(checkNotificationPermission, 500);
         });
 
-        checkNotificationPermission();
-
         // ============================================
         // SISTEMA DE MENSAJES DE BIENVENIDA
         // ============================================
+
         const welcomeMessages = {
             morning: [
                 "¡Buenos días! ☀️ Empieza tu mañana con el delicioso sabor ecuatoriano",
@@ -535,13 +537,10 @@
             }, 4000);
         }
 
-        window.addEventListener('load', () => {
-            setTimeout(showWelcomeMessage, 500);
-        });
-
         // ============================================
         // CONFIGURACIÓN DE CATEGORÍAS
         // ============================================
+
         const categoryEmojis = {
             'empanadas': '🥟',
             'corviches': '🐟',
@@ -559,7 +558,7 @@
         // ============================================
         // GESTIÓN DE ESTADO DEL RESTAURANTE
         // ============================================
-        
+
         function loadRestaurantStatus() {
             fetch('/api/restaurant-status')
                 .then(r => r.json())
@@ -637,7 +636,7 @@
         // ============================================
         // CARGAR PRODUCTOS
         // ============================================
-        
+
         function loadProducts() {
             fetch('/api/products')
             .then(r => r.json())
@@ -657,7 +656,7 @@
                     renderProductsList();
                 }
                 
-                console.log('Productos cargados y menú actualizado');
+                console.log('✅ Productos cargados');
             })
             .catch(error => {
                 console.error('Error cargando productos:', error);
@@ -711,10 +710,10 @@
             }
         }
 
-        function getProductName(id){
-            for(let cat in products){
-                const p = products[cat].find(x=>x.id===id);
-                if(p) return p.name;
+        function getProductName(id) {
+            for (let cat in products) {
+                const p = products[cat].find(x => x.id === id);
+                if (p) return p.name;
             }
             return id;
         }
@@ -722,7 +721,7 @@
         // ============================================
         // CARRITO DE COMPRAS
         // ============================================
-        
+
         function changeQuantity(item, delta) {
             if (!cart[item]) cart[item] = 0;
             cart[item] = Math.max(0, cart[item] + delta);
@@ -779,16 +778,16 @@
             if (items.length === 0) return;
 
             fetch('/api/orders', {
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ items })
             })
-            .then(r=>r.json())
-            .then(order=>{
+            .then(r => r.json())
+            .then(order => {
                 alert("¡Pedido enviado con éxito!");
 
-                Object.keys(cart).forEach(k=>{
-                    cart[k]=0;
+                Object.keys(cart).forEach(k => {
+                    cart[k] = 0;
                     const qtyElement = document.getElementById(`qty-${k}`);
                     if (qtyElement) {
                         qtyElement.textContent = 0;
@@ -796,11 +795,8 @@
                 });
                 updateCart();
 
-                loadOrdersFromServer();
-                
-                if (USER_ROLE === 'admin') {
-                    loadAdminOrders();
-                }
+                // Forzar actualización inmediata
+                updateManager.update();
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -809,9 +805,9 @@
         }
 
         // ============================================
-        // GESTIÓN DE PEDIDOS CON NOTIFICACIONES (CORREGIDO)
+        // GESTIÓN DE PEDIDOS CON NOTIFICACIONES
         // ============================================
-        
+
         function renderOrders() {
             const ordersList = document.getElementById('ordersList');
             
@@ -865,7 +861,7 @@
                         </div>
 
                         <div class="order-items">
-                            ${order.items.map(i=>{
+                            ${order.items.map(i => {
                                 const sub = (prices[i.name] || 0) * i.quantity;
                                 total += sub;
                                 return `
@@ -886,17 +882,17 @@
 
                         ${USER_ROLE === 'admin' ? `
                         <div class="status-buttons">
-                            ${order.status==='pending' ? `
+                            ${order.status === 'pending' ? `
                                 <button class="status-btn btn-preparing" onclick="updateOrderStatus(${order.id},'preparing')">
                                     🍳 Marcar Preparando
                                 </button>` : ''}
 
-                            ${order.status==='preparing' ? `
+                            ${order.status === 'preparing' ? `
                                 <button class="status-btn btn-ready" onclick="updateOrderStatus(${order.id},'ready')">
                                     ✅ Marcar Listo
                                 </button>` : ''}
 
-                            ${order.status==='ready' ? `
+                            ${order.status === 'ready' ? `
                                 <button class="status-btn btn-delivered" onclick="updateOrderStatus(${order.id},'delivered')">
                                     🚀 Marcar Entregado
                                 </button>` : ''}
@@ -912,30 +908,26 @@
             
             fetch(`/api/orders/${orderId}`, {
                 method: 'PUT',
-                headers: {'Content-Type':'application/json'},
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ status: newStatus })
             })
-            .then(r=>r.json())
-            .then((updatedOrder)=>{
+            .then(r => r.json())
+            .then((updatedOrder) => {
                 console.log(`✅ Pedido #${orderId} actualizado exitosamente`);
                 
                 // Actualizar inmediatamente en el array local
                 const orderIndex = orders.findIndex(o => o.id === orderId);
                 if (orderIndex !== -1) {
                     orders[orderIndex].status = newStatus;
-                    console.log(`📋 Estado local actualizado para pedido #${orderId}`);
                 }
                 
-                // Re-renderizar inmediatamente
+                // Re-renderizar con animación
                 window.shouldAnimateOrders = true;
                 renderOrders();
                 
-                // Cargar del servidor para confirmar
+                // Forzar actualización del servidor
                 setTimeout(() => {
-                    loadOrdersFromServer();
-                    if (USER_ROLE === 'admin') {
-                        loadAdminOrders();
-                    }
+                    updateManager.update();
                 }, 100);
                 
                 setTimeout(() => {
@@ -948,150 +940,151 @@
             });
         }
 
-        function loadOrdersFromServer(){
-            fetch('/api/orders')
-            .then(r=>r.json())
-            .then(data=>{
-                console.log(`📥 Pedidos recibidos del servidor: ${data.length}`);
-                
-                // ADMIN: Detectar nuevos pedidos
-                if (USER_ROLE === 'admin') {
-                    window.notificationSystem.checkForNewOrders(data);
-                }
-                
-                // USUARIO: Detectar cambios de estado
-                if (USER_ROLE === 'user') {
-                    window.notificationSystem.checkForStatusChanges(data);
-                }
-                
-                // Actualizar el array global de pedidos
-                orders = data;
-                
-                // Actualizar contador de pedidos
-                document.getElementById('orderCount').textContent = orders.length;
-                
-                // Re-renderizar pedidos (esto actualiza la UI)
-                renderOrders();
-                
-                // Guardar copia para la próxima comparación
-                previousOrders = JSON.parse(JSON.stringify(data));
-            })
-            .catch(error => {
-                console.error('❌ Error cargando pedidos:', error);
-            });
+        function loadOrdersFromServer() {
+            return fetch('/api/orders', { cache: "no-store" })
+                .then(r => r.json())
+                .then(data => {
+                    console.log(`📥 ${data.length} pedidos recibidos`);
+                    
+                    // Detectar nuevos pedidos (admin)
+                    if (USER_ROLE === 'admin') {
+                        window.notificationSystem.checkForNewOrders(data);
+                    }
+                    
+                    // Detectar cambios de estado (usuario)
+                    if (USER_ROLE === 'user') {
+                        window.notificationSystem.checkForStatusChanges(data);
+                    }
+                    
+                    // Actualizar estado global
+                    orders = data;
+                    document.getElementById('orderCount').textContent = orders.length;
+                    
+                    // Renderizar
+                    renderOrders();
+                    
+                    // Guardar para próxima comparación
+                    previousOrders = JSON.parse(JSON.stringify(data));
+                })
+                .catch(error => {
+                    console.error('❌ Error cargando pedidos:', error);
+                    throw error;
+                });
         }
 
-        function loadAdminOrders(){
+        function loadAdminOrders() {
             const adminOrders = document.getElementById('adminOrders');
             
             if (!adminOrders) {
                 console.log('⚠️ Elemento adminOrders no encontrado');
-                return;
+                return Promise.resolve();
             }
             
-            fetch('/api/orders')
-            .then(r=>r.json())
-            .then(data=>{
-                console.log(`📥 Pedidos globales actualizados: ${data.length}`);
-                
-                if (USER_ROLE === 'admin') {
-                    window.notificationSystem.checkForNewOrders(data);
-                }
-                
-                if (data.length === 0) {
-                    adminOrders.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No hay pedidos todavía</p>';
-                    return;
-                }
-
-                const statusText = {
-                    pending: 'Pendiente',
-                    preparing: 'Preparando',
-                    ready: 'Listo',
-                    delivered: 'Entregado'
-                };
-
-                adminOrders.innerHTML = data.map(order=>{
-                    let total = 0;
+            return fetch('/api/orders', { cache: "no-store" })
+                .then(r => r.json())
+                .then(data => {
+                    console.log(`📥 Pedidos admin actualizados: ${data.length}`);
                     
-                    let displayName = order.username;
-                    if (!displayName && order.user_id) {
-                        if (order.user_id === 'admin') {
-                            displayName = 'Administrador';
-                        } else if (order.user_id.includes('_')) {
-                            const parts = order.user_id.split('_');
-                            displayName = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-                        } else {
-                            displayName = 'Usuario';
-                        }
+                    if (USER_ROLE === 'admin') {
+                        window.notificationSystem.checkForNewOrders(data);
+                    }
+                    
+                    if (data.length === 0) {
+                        adminOrders.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No hay pedidos todavía</p>';
+                        return;
                     }
 
-                    const animateClass = window.shouldAnimateOrders ? ' animate' : '';
+                    const statusText = {
+                        pending: 'Pendiente',
+                        preparing: 'Preparando',
+                        ready: 'Listo',
+                        delivered: 'Entregado'
+                    };
 
-                    return `
-                        <div class="order-card${animateClass}">
-                            <div class="order-header">
-                                <div>
-                                    <div class="order-number">Pedido #${order.id}</div>
-                                    ${displayName ? `<div class="order-user">👤 ${displayName}</div>` : ''}
-                                    <div class="order-time">
-                                        ${new Date(order.timestamp).toLocaleString('es-EC')}
-                                    </div>
-                                </div>
-                                <span class="status-badge status-${order.status}">
-                                    ${statusText[order.status]}
-                                </span>
-                            </div>
+                    adminOrders.innerHTML = data.map(order => {
+                        let total = 0;
+                        
+                        let displayName = order.username;
+                        if (!displayName && order.user_id) {
+                            if (order.user_id === 'admin') {
+                                displayName = 'Administrador';
+                            } else if (order.user_id.includes('_')) {
+                                const parts = order.user_id.split('_');
+                                displayName = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+                            } else {
+                                displayName = 'Usuario';
+                            }
+                        }
 
-                            <div class="order-items">
-                                ${order.items.map(i=>{
-                                    const sub = (prices[i.name] || 0)*i.quantity;
-                                    total += sub;
-                                    return `
-                                        <div class="order-item">
-                                            <span>${getProductName(i.name)} x${i.quantity}</span>
-                                            <span>$${sub.toFixed(2)}</span>
+                        const animateClass = window.shouldAnimateOrders ? ' animate' : '';
+
+                        return `
+                            <div class="order-card${animateClass}">
+                                <div class="order-header">
+                                    <div>
+                                        <div class="order-number">Pedido #${order.id}</div>
+                                        ${displayName ? `<div class="order-user">👤 ${displayName}</div>` : ''}
+                                        <div class="order-time">
+                                            ${new Date(order.timestamp).toLocaleString('es-EC')}
                                         </div>
-                                    `;
-                                }).join('')}
+                                    </div>
+                                    <span class="status-badge status-${order.status}">
+                                        ${statusText[order.status]}
+                                    </span>
+                                </div>
+
+                                <div class="order-items">
+                                    ${order.items.map(i => {
+                                        const sub = (prices[i.name] || 0) * i.quantity;
+                                        total += sub;
+                                        return `
+                                            <div class="order-item">
+                                                <span>${getProductName(i.name)} x${i.quantity}</span>
+                                                <span>$${sub.toFixed(2)}</span>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+
+                                <div class="order-item" style="font-weight:700">
+                                    <span>Total</span>
+                                    <span style="color:var(--primary)">
+                                        $${total.toFixed(2)}
+                                    </span>
+                                </div>
+
+                                <div class="status-buttons">
+                                    ${order.status === 'pending' ? `
+                                        <button class="status-btn btn-preparing" onclick="updateOrderStatus(${order.id},'preparing')">
+                                            🍳 Marcar Preparando
+                                        </button>` : ''}
+
+                                    ${order.status === 'preparing' ? `
+                                        <button class="status-btn btn-ready" onclick="updateOrderStatus(${order.id},'ready')">
+                                            ✅ Marcar Listo
+                                        </button>` : ''}
+
+                                    ${order.status === 'ready' ? `
+                                        <button class="status-btn btn-delivered" onclick="updateOrderStatus(${order.id},'delivered')">
+                                            🚀 Marcar Entregado
+                                        </button>` : ''}
+                                </div>
                             </div>
-
-                            <div class="order-item" style="font-weight:700">
-                                <span>Total</span>
-                                <span style="color:var(--primary)">
-                                    $${total.toFixed(2)}
-                                </span>
-                            </div>
-
-                            <div class="status-buttons">
-                                ${order.status==='pending' ? `
-                                    <button class="status-btn btn-preparing" onclick="updateOrderStatus(${order.id},'preparing')">
-                                        🍳 Marcar Preparando
-                                    </button>` : ''}
-
-                                ${order.status==='preparing' ? `
-                                    <button class="status-btn btn-ready" onclick="updateOrderStatus(${order.id},'ready')">
-                                        ✅ Marcar Listo
-                                    </button>` : ''}
-
-                                ${order.status==='ready' ? `
-                                    <button class="status-btn btn-delivered" onclick="updateOrderStatus(${order.id},'delivered')">
-                                        🚀 Marcar Entregado
-                                    </button>` : ''}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            })
-            .catch(error => {
-                console.error('❌ Error cargando pedidos globales:', error);
-                adminOrders.innerHTML = '<p style="color:red; text-align: center; padding: 20px;">Error cargando pedidos. Reintentando...</p>';
-            });
+                        `;
+                    }).join('');
+                })
+                .catch(error => {
+                    console.error('❌ Error cargando pedidos admin:', error);
+                    if (adminOrders) {
+                        adminOrders.innerHTML = '<p style="color:red; text-align: center; padding: 20px;">Error cargando pedidos.</p>';
+                    }
+                });
         }
 
         // ============================================
         // GESTIÓN DE PRODUCTOS (ADMIN)
         // ============================================
-        
+
         function addProduct() {
             const name = document.getElementById('newName').value.trim();
             const description = document.getElementById('newDescription').value.trim();
@@ -1122,8 +1115,6 @@
                 document.getElementById('newPrice').value = '';
                 
                 loadProducts();
-                
-                console.log('Producto agregado - actualizando todas las vistas');
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -1140,10 +1131,7 @@
             .then(r => r.json())
             .then(() => {
                 alert('✅ Producto eliminado con éxito');
-                
                 loadProducts();
-                
-                console.log('Producto eliminado - actualizando todas las vistas');
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -1187,12 +1175,12 @@
         // ============================================
         // MODAL DE PAGO
         // ============================================
-        
-        function showPayment(){
+
+        function showPayment() {
             document.getElementById("paymentModal").style.display = "flex";
         }
 
-        function closePayment(){
+        function closePayment() {
             document.getElementById("paymentModal").style.display = "none";
         }
 
@@ -1214,7 +1202,7 @@
         // ============================================
         // NAVEGACIÓN ENTRE TABS
         // ============================================
-        
+
         function switchTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
@@ -1226,185 +1214,153 @@
             else if (tab === 'manage') {
                 document.querySelectorAll('.tab')[1].classList.add('active');
                 document.getElementById('manageSection').classList.add('active');
-                loadOrdersFromServer();
+                updateManager.update();
             }
             else if (tab === 'admin') {
                 document.querySelectorAll('.tab')[2].classList.add('active');
                 document.getElementById('adminSection').classList.add('active');
-                loadAdminOrders();
+                updateManager.update();
                 renderProductsList();
             }
         }
 
         // ============================================
-        // SISTEMA DE ACTUALIZACIÓN PARA MÓVILES (CRÍTICO)
+        // SISTEMA DE ACTUALIZACIÓN UNIFICADO Y OPTIMIZADO
         // ============================================
-        
-        // Variables de control
-        let updateIntervalId = null;
-        let updateTimeoutId = null;
-        let lastUpdateTime = 0;
-        const UPDATE_INTERVAL = 2000; // 2 segundos - MÁS FRECUENTE
-        let isUpdating = false;
-        
-        // Función de actualización mejorada
-        function forceUpdate() {
-            if (isUpdating) {
-                console.log('⏳ Actualización en progreso, esperando...');
-                return;
+
+        class OrderUpdateManager {
+            constructor() {
+                this.updateInterval = 3000; // 3 segundos
+                this.intervalId = null;
+                this.isUpdating = false;
+                this.lastUpdate = 0;
             }
-            
-            isUpdating = true;
-            console.log('🔄 Forzando actualización completa...');
-            
-            Promise.all([
-                loadOrdersFromServer(),
-                USER_ROLE === 'admin' ? loadAdminOrders() : Promise.resolve()
-            ]).then(() => {
-                console.log('✅ Actualización completa finalizada');
-                isUpdating = false;
-                lastUpdateTime = Date.now();
-            }).catch(error => {
-                console.error('❌ Error en actualización:', error);
-                isUpdating = false;
-            });
-        }
 
-
-
-        
-        function actualizarPedidos() {
-            fetch('/api/orders', { cache: "no-store" })
-                .then(res => res.json())
-                .then(data => {
-                    let html = "";
-                    data.forEach(p => {
-                        html += `
-                            <div>
-                                <b>Pedido #${p.id}</b><br>
-                                Estado: ${p.status}<br>
-                                Cliente: ${p.username}
-                                <hr>
-                            </div>
-                        `;
-                    });
-                    document.getElementById("lista-pedidos").innerHTML = html;
-                });
-        }
-
-        // ejecutar apenas entra
-        actualizarPedidos();
-
-        // y luego cada 3 segundos
-        setInterval(actualizarPedidos, 3000);
-
-
-
-        
-        // Loop de actualización continua usando requestAnimationFrame
-        function continuousUpdate() {
-            const now = Date.now();
-            
-            if (now - lastUpdateTime >= UPDATE_INTERVAL && !isUpdating) {
-                forceUpdate();
-            }
-            
-            // Continuar el loop
-            requestAnimationFrame(continuousUpdate);
-        }
-        
-        // Detectar cuando la página vuelve a estar visible
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden) {
-                console.log('📱 Página visible - Forzando actualización inmediata');
-                forceUpdate();
-            }
-        });
-        
-        // Detectar cuando la ventana vuelve a tener foco
-        window.addEventListener('focus', function() {
-            console.log('📱 Ventana enfocada - Forzando actualización inmediata');
-            forceUpdate();
-        });
-        
-        // Detectar cuando el usuario toca la pantalla (móviles)
-        let lastTouchUpdate = 0;
-        document.addEventListener('touchstart', function() {
-            const now = Date.now();
-            // Solo actualizar si han pasado más de 5 segundos desde el último toque
-            if (now - lastTouchUpdate > 5000) {
-                console.log('👆 Touch detectado - Verificando actualizaciones');
-                forceUpdate();
-                lastTouchUpdate = now;
-            }
-        }, { passive: true });
-        
-        // Detectar scroll (el usuario está activo)
-        let lastScrollUpdate = 0;
-        window.addEventListener('scroll', function() {
-            const now = Date.now();
-            // Solo actualizar si han pasado más de 10 segundos desde el último scroll
-            if (now - lastScrollUpdate > 10000) {
-                console.log('📜 Scroll detectado - Verificando actualizaciones');
-                forceUpdate();
-                lastScrollUpdate = now;
-            }
-        }, { passive: true });
-
-        // ============================================
-        // INICIALIZACIÓN
-        // ============================================
-        
-        loadProducts();
-        updateCart();
-        loadRestaurantStatus();
-        
-        // Inicializar estados sin notificar
-        fetch('/api/orders')
-            .then(r => r.json())
-            .then(data => {
-                console.log('🎬 Inicializando sistema con', data.length, 'pedidos');
-                window.notificationSystem.initializeStates(data);
-                orders = data;
-                document.getElementById('orderCount').textContent = orders.length;
-                renderOrders();
-                lastUpdateTime = Date.now();
-                
-                // Iniciar loop de actualización continua
-                console.log('🚀 Iniciando sistema de actualización continua para móviles');
-                requestAnimationFrame(continuousUpdate);
-            });
-
-        // Intervalos tradicionales (respaldo)
-        setInterval(() => {
-            if (!isUpdating) {
-                loadOrdersFromServer();
-            }
-        }, 3000);
-        
-        setInterval(loadRestaurantStatus, 10000);
-        setInterval(loadProducts, 10000);
-        
-        // Verificar bandera de limpieza cada 1 segundo (solo usuarios)
-        if (USER_ROLE === 'user') {
-            setInterval(checkCleanFlag, 1000);
-            checkCleanFlag();
-        }
-        
-        // Actualización de pedidos admin
-        if (USER_ROLE === 'admin') {
-            setInterval(() => {
-                if (!isUpdating) {
-                    const adminSection = document.getElementById('adminSection');
-                    if (adminSection && adminSection.classList.contains('active')) {
-                        loadAdminOrders();
-                    }
+            async update() {
+                if (this.isUpdating) {
+                    console.log('⏳ Actualización en progreso...');
+                    return;
                 }
-            }, 3000);
+                
+                this.isUpdating = true;
+                console.log('🔄 Actualizando pedidos...');
+                
+                try {
+                    await loadOrdersFromServer();
+                    
+                    if (USER_ROLE === 'admin') {
+                        const adminSection = document.getElementById('adminSection');
+                        if (adminSection && adminSection.classList.contains('active')) {
+                            await loadAdminOrders();
+                        }
+                    }
+                    
+                    this.lastUpdate = Date.now();
+                    console.log('✅ Actualización completa');
+                } catch (error) {
+                    console.error('❌ Error actualizando:', error);
+                } finally {
+                    this.isUpdating = false;
+                }
+            }
+
+            start() {
+                console.log('🚀 Iniciando sistema de actualización...');
+                
+                // Actualización inicial
+                this.update();
+                
+                // Intervalo regular (cada 3 segundos)
+                this.intervalId = setInterval(() => {
+                    this.update();
+                }, this.updateInterval);
+                
+                // Actualizar cuando la página vuelve a estar visible
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden) {
+                        console.log('📱 Página visible - Actualizando');
+                        this.update();
+                    }
+                });
+                
+                // Actualizar cuando la ventana recupera foco
+                window.addEventListener('focus', () => {
+                    console.log('🔍 Ventana enfocada - Actualizando');
+                    this.update();
+                });
+                
+                console.log('✅ Sistema de actualización activo');
+            }
+
+            stop() {
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                    console.log('⏹️ Sistema de actualización detenido');
+                }
+            }
         }
-        
-        console.log('✅ Sistema de actualización móvil completamente activado');
-        console.log('📱 Métodos activos: visibilitychange, focus, touch, scroll, requestAnimationFrame, setInterval');
+
+        // Instancia global del gestor de actualizaciones
+        const updateManager = new OrderUpdateManager();
+
+        // ============================================
+        // INICIALIZACIÓN DEL SISTEMA
+        // ============================================
+
+        // Inicializar cuando la página carga
+        window.addEventListener('load', () => {
+            console.log('🎬 Inicializando aplicación...');
+            
+            // Mostrar mensaje de bienvenida
+            setTimeout(showWelcomeMessage, 500);
+            
+            // Verificar permisos de notificaciones
+            checkNotificationPermission();
+            
+            // Cargar datos iniciales
+            loadProducts();
+            updateCart();
+            loadRestaurantStatus();
+            
+            // Inicializar estados de pedidos y comenzar actualizaciones
+            fetch('/api/orders', { cache: "no-store" })
+                .then(r => r.json())
+                .then(data => {
+                    console.log('🎬 Estado inicial:', data.length, 'pedidos');
+                    
+                    // Inicializar sistema de notificaciones sin alertas
+                    window.notificationSystem.initializeStates(data);
+                    
+                    // Establecer estado global
+                    orders = data;
+                    previousOrders = JSON.parse(JSON.stringify(data));
+                    document.getElementById('orderCount').textContent = orders.length;
+                    
+                    // Renderizar
+                    renderOrders();
+                    
+                    // Iniciar sistema de actualizaciones automáticas
+                    updateManager.start();
+                    
+                    console.log('✅ Sistema inicializado correctamente');
+                })
+                .catch(error => {
+                    console.error('❌ Error en inicialización:', error);
+                });
+            
+            // Intervalos adicionales para otros componentes
+            setInterval(loadRestaurantStatus, 10000); // Estado del restaurante cada 10s
+            setInterval(loadProducts, 10000); // Productos cada 10s
+            
+            // Verificar limpieza de pedidos (solo usuarios)
+            if (USER_ROLE === 'user') {
+                setInterval(checkCleanFlag, 1000);
+                checkCleanFlag();
+            }
+        });
+
+        console.log('📦 Módulo de pedidos cargado - Versión Optimizada');
     </script>
 </body>
 </html>

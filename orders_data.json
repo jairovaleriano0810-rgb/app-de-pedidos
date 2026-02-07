@@ -1,4 +1,61 @@
 {
-  "orders": [],
-  "order_counter": 53
+  "orders": [
+    {
+      "id": 61,
+      "user_id": "kenin_valeriano",
+      "username": "Kenin Valeriano",
+      "items": [
+        {
+          "name": "empanada-pollo",
+          "quantity": 3
+        }
+      ],
+      "status": "delivered",
+      "timestamp": "2026-02-07T10:41:01.370658"
+    },
+    {
+      "id": 60,
+      "user_id": "kenin_valeriano",
+      "username": "Kenin Valeriano",
+      "items": [
+        {
+          "name": "empanada-pollo",
+          "quantity": 2
+        },
+        {
+          "name": "empanada-queso",
+          "quantity": 2
+        }
+      ],
+      "status": "delivered",
+      "timestamp": "2026-02-07T10:40:49.737559"
+    },
+    {
+      "id": 59,
+      "user_id": "kenin_valeriano",
+      "username": "Kenin Valeriano",
+      "items": [
+        {
+          "name": "empanada-pollo",
+          "quantity": 2
+        }
+      ],
+      "status": "pending",
+      "timestamp": "2026-02-07T10:40:34.866682"
+    },
+    {
+      "id": 58,
+      "user_id": "kenin_valeriano",
+      "username": "Kenin Valeriano",
+      "items": [
+        {
+          "name": "empanada-pollo",
+          "quantity": 3
+        }
+      ],
+      "status": "pending",
+      "timestamp": "2026-02-07T10:40:28.018731"
+    }
+  ],
+  "order_counter": 62
 }
