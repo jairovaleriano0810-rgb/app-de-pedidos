@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, session, redirect
 from datetime import datetime
 import os
 import json
+from waitress import serve
 
 app = Flask(__name__)
 app.secret_key = "clave-super-secreta-123"
@@ -430,5 +431,5 @@ def delete_product(product_id):
 # =========================
 
 if __name__ == '__main__':
-    os.makedirs('templates', exist_ok=True)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    serve(app, host='0.0.0.0', port=port)
