@@ -1,6 +1,32 @@
 {
   "orders": [
     {
+      "id": 63,
+      "user_id": "kenin_valeriano",
+      "username": "Kenin Valeriano",
+      "items": [
+        {
+          "name": "empanada-pollo",
+          "quantity": 2
+        }
+      ],
+      "status": "delivered",
+      "timestamp": "2026-02-07T11:29:35.050344"
+    },
+    {
+      "id": 62,
+      "user_id": "kenin_valeriano",
+      "username": "Kenin Valeriano",
+      "items": [
+        {
+          "name": "empanada-pollo",
+          "quantity": 3
+        }
+      ],
+      "status": "pending",
+      "timestamp": "2026-02-07T11:29:28.183322"
+    },
+    {
       "id": 61,
       "user_id": "kenin_valeriano",
       "username": "Kenin Valeriano",
@@ -57,5 +83,5 @@
       "timestamp": "2026-02-07T10:40:28.018731"
     }
   ],
-  "order_counter": 62
+  "order_counter": 64
 }

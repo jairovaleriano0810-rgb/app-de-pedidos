@@ -348,7 +348,13 @@
         let products = {};
         let prices = {};
         let isRestaurantOpen = true;
-        let previousOrders = [];
+
+        // ============================================
+        // CONTROL DE RENDERIZADO (CRÍTICO - ANTI-DUPLICACIÓN)
+        // ============================================
+        
+        let isRenderingOrders = false;
+        let pendingRender = false;
 
         // Variable global para control de animaciones
         window.shouldAnimateOrders = false;
@@ -396,14 +402,12 @@
                     if (data.cleaned) {
                         console.log('🔔 LIMPIEZA DETECTADA - Mostrando notificación al usuario');
                         
-                        // Notificación del navegador
                         window.notificationSystem.showBrowserNotification(
                             "🔔 Sistema Actualizado",
                             "El administrador ha limpiado todos los pedidos. No te preocupes, puedes hacer nuevos pedidos cuando desees.",
                             "🗑️"
                         );
                         
-                        // Notificación visual en pantalla
                         window.notificationSystem.showInPageNotification(
                             "🔔 Actualización del Sistema",
                             `<strong>Atención:</strong> El administrador ha limpiado todos los pedidos del sistema.<br>
@@ -411,20 +415,16 @@
                             'warning'
                         );
                         
-                        // Sonido de notificación
                         window.notificationSystem.playStatusChangeSound();
                         
-                        // Alert adicional para asegurar que lo vean
                         setTimeout(() => {
                             alert('🔔 AVISO IMPORTANTE\n\nEl administrador ha limpiado todos los pedidos del sistema para mantener la página actualizada.\n\n✅ No te preocupes, todo está bien.\n✅ Puedes hacer nuevos pedidos normalmente.');
                         }, 500);
                         
-                        // Confirmar que vio la notificación
                         fetch('/api/confirm-clean-notification', {
                             method: 'POST'
                         });
                         
-                        // Recargar pedidos inmediatamente
                         loadOrdersFromServer();
                     }
                 })
@@ -809,11 +809,27 @@
         }
 
         // ============================================
-        // GESTIÓN DE PEDIDOS CON NOTIFICACIONES (CORREGIDO)
+        // GESTIÓN DE PEDIDOS CON NOTIFICACIONES - FIXED
         // ============================================
         
         function renderOrders() {
+            // 🔴 CRÍTICO: Prevenir renderizados simultáneos
+            if (isRenderingOrders) {
+                console.log('⏸️ Renderizado en progreso, marcando pendiente');
+                pendingRender = true;
+                return;
+            }
+            
+            isRenderingOrders = true;
+            console.log('🎨 Iniciando renderizado de pedidos');
+            
             const ordersList = document.getElementById('ordersList');
+            
+            if (!ordersList) {
+                console.error('❌ Elemento ordersList no encontrado');
+                isRenderingOrders = false;
+                return;
+            }
             
             if (orders.length === 0) {
                 ordersList.innerHTML = `
@@ -822,6 +838,7 @@
                         <p>Los pedidos aparecerán aquí en orden cronológico</p>
                     </div>
                 `;
+                isRenderingOrders = false;
                 return;
             }
 
@@ -832,7 +849,7 @@
                 delivered: 'Entregado'
             };
 
-            ordersList.innerHTML = orders.map(order => {
+            const html = orders.map(order => {
                 let total = 0;
                 
                 let displayName = order.username;
@@ -905,6 +922,19 @@
                     </div>
                 `;
             }).join('');
+            
+            // 🔴 ACTUALIZACIÓN ÚNICA DEL DOM
+            ordersList.innerHTML = html;
+            
+            console.log(`✅ Renderizado completado: ${orders.length} pedidos`);
+            isRenderingOrders = false;
+            
+            // Si había un render pendiente, ejecutarlo ahora
+            if (pendingRender) {
+                pendingRender = false;
+                console.log('🔄 Ejecutando render pendiente');
+                setTimeout(renderOrders, 100);
+            }
         }
 
         function updateOrderStatus(orderId, newStatus) {
@@ -919,18 +949,15 @@
             .then((updatedOrder)=>{
                 console.log(`✅ Pedido #${orderId} actualizado exitosamente`);
                 
-                // Actualizar inmediatamente en el array local
                 const orderIndex = orders.findIndex(o => o.id === orderId);
                 if (orderIndex !== -1) {
                     orders[orderIndex].status = newStatus;
                     console.log(`📋 Estado local actualizado para pedido #${orderId}`);
                 }
                 
-                // Re-renderizar inmediatamente
                 window.shouldAnimateOrders = true;
                 renderOrders();
                 
-                // Cargar del servidor para confirmar
                 setTimeout(() => {
                     loadOrdersFromServer();
                     if (USER_ROLE === 'admin') {
@@ -948,8 +975,9 @@
             });
         }
 
+        // 🔴 FUNCIÓN UNIFICADA DE ACTUALIZACIÓN (SIN DUPLICADOS)
         function loadOrdersFromServer(){
-            fetch('/api/orders')
+            fetch('/api/orders', { cache: "no-store" })
             .then(r=>r.json())
             .then(data=>{
                 console.log(`📥 Pedidos recibidos del servidor: ${data.length}`);
@@ -970,11 +998,8 @@
                 // Actualizar contador de pedidos
                 document.getElementById('orderCount').textContent = orders.length;
                 
-                // Re-renderizar pedidos (esto actualiza la UI)
+                // 🔴 RENDERIZAR UNA SOLA VEZ
                 renderOrders();
-                
-                // Guardar copia para la próxima comparación
-                previousOrders = JSON.parse(JSON.stringify(data));
             })
             .catch(error => {
                 console.error('❌ Error cargando pedidos:', error);
@@ -989,7 +1014,7 @@
                 return;
             }
             
-            fetch('/api/orders')
+            fetch('/api/orders', { cache: "no-store" })
             .then(r=>r.json())
             .then(data=>{
                 console.log(`📥 Pedidos globales actualizados: ${data.length}`);
@@ -1237,122 +1262,7 @@
         }
 
         // ============================================
-        // SISTEMA DE ACTUALIZACIÓN PARA MÓVILES (CRÍTICO)
-        // ============================================
-        
-        // Variables de control
-        let updateIntervalId = null;
-        let updateTimeoutId = null;
-        let lastUpdateTime = 0;
-        const UPDATE_INTERVAL = 2000; // 2 segundos - MÁS FRECUENTE
-        let isUpdating = false;
-        
-        // Función de actualización mejorada
-        function forceUpdate() {
-            if (isUpdating) {
-                console.log('⏳ Actualización en progreso, esperando...');
-                return;
-            }
-            
-            isUpdating = true;
-            console.log('🔄 Forzando actualización completa...');
-            
-            Promise.all([
-                loadOrdersFromServer(),
-                USER_ROLE === 'admin' ? loadAdminOrders() : Promise.resolve()
-            ]).then(() => {
-                console.log('✅ Actualización completa finalizada');
-                isUpdating = false;
-                lastUpdateTime = Date.now();
-            }).catch(error => {
-                console.error('❌ Error en actualización:', error);
-                isUpdating = false;
-            });
-        }
-
-
-
-        
-        function actualizarPedidos() {
-            fetch('/api/orders', { cache: "no-store" })
-                .then(res => res.json())
-                .then(data => {
-                    let html = "";
-                    data.forEach(p => {
-                        html += `
-                            <div>
-                                <b>Pedido #${p.id}</b><br>
-                                Estado: ${p.status}<br>
-                                Cliente: ${p.username}
-                                <hr>
-                            </div>
-                        `;
-                    });
-                    document.getElementById("ordersList").innerHTML = html;
-                });
-        }
-
-        // ejecutar apenas entra
-        actualizarPedidos();
-
-        // y luego cada 3 segundos
-        setInterval(actualizarPedidos, 3000);
-
-
-
-        
-        // Loop de actualización continua usando requestAnimationFrame
-        function continuousUpdate() {
-            const now = Date.now();
-            
-            if (now - lastUpdateTime >= UPDATE_INTERVAL && !isUpdating) {
-                forceUpdate();
-            }
-            
-            // Continuar el loop
-            requestAnimationFrame(continuousUpdate);
-        }
-        
-        // Detectar cuando la página vuelve a estar visible
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden) {
-                console.log('📱 Página visible - Forzando actualización inmediata');
-                forceUpdate();
-            }
-        });
-        
-        // Detectar cuando la ventana vuelve a tener foco
-        window.addEventListener('focus', function() {
-            console.log('📱 Ventana enfocada - Forzando actualización inmediata');
-            forceUpdate();
-        });
-        
-        // Detectar cuando el usuario toca la pantalla (móviles)
-        let lastTouchUpdate = 0;
-        document.addEventListener('touchstart', function() {
-            const now = Date.now();
-            // Solo actualizar si han pasado más de 5 segundos desde el último toque
-            if (now - lastTouchUpdate > 5000) {
-                console.log('👆 Touch detectado - Verificando actualizaciones');
-                forceUpdate();
-                lastTouchUpdate = now;
-            }
-        }, { passive: true });
-        
-        // Detectar scroll (el usuario está activo)
-        let lastScrollUpdate = 0;
-        window.addEventListener('scroll', function() {
-            const now = Date.now();
-            // Solo actualizar si han pasado más de 10 segundos desde el último scroll
-            if (now - lastScrollUpdate > 10000) {
-                console.log('📜 Scroll detectado - Verificando actualizaciones');
-                forceUpdate();
-                lastScrollUpdate = now;
-            }
-        }, { passive: true });
-
-        // ============================================
-        // INICIALIZACIÓN
+        // INICIALIZACIÓN Y ACTUALIZACIÓN AUTOMÁTICA
         // ============================================
         
         loadProducts();
@@ -1360,7 +1270,7 @@
         loadRestaurantStatus();
         
         // Inicializar estados sin notificar
-        fetch('/api/orders')
+        fetch('/api/orders', { cache: "no-store" })
             .then(r => r.json())
             .then(data => {
                 console.log('🎬 Inicializando sistema con', data.length, 'pedidos');
@@ -1368,43 +1278,36 @@
                 orders = data;
                 document.getElementById('orderCount').textContent = orders.length;
                 renderOrders();
-                lastUpdateTime = Date.now();
-                
-                // Iniciar loop de actualización continua
-                console.log('🚀 Iniciando sistema de actualización continua para móviles');
-                requestAnimationFrame(continuousUpdate);
             });
 
-        // Intervalos tradicionales (respaldo)
+        // 🔴 INTERVALO ÚNICO DE ACTUALIZACIÓN (3 SEGUNDOS)
         setInterval(() => {
-            if (!isUpdating) {
-                loadOrdersFromServer();
-            }
+            loadOrdersFromServer();
         }, 3000);
         
+        // Actualización de estado del restaurante (cada 10 segundos)
         setInterval(loadRestaurantStatus, 10000);
+        
+        // Actualización de productos (cada 10 segundos)
         setInterval(loadProducts, 10000);
         
-        // Verificar bandera de limpieza cada 1 segundo (solo usuarios)
+        // Verificar bandera de limpieza (solo usuarios, cada 2 segundos)
         if (USER_ROLE === 'user') {
-            setInterval(checkCleanFlag, 1000);
+            setInterval(checkCleanFlag, 2000);
             checkCleanFlag();
         }
         
-        // Actualización de pedidos admin
+        // Actualización de pedidos admin (cada 3 segundos)
         if (USER_ROLE === 'admin') {
             setInterval(() => {
-                if (!isUpdating) {
-                    const adminSection = document.getElementById('adminSection');
-                    if (adminSection && adminSection.classList.contains('active')) {
-                        loadAdminOrders();
-                    }
+                const adminSection = document.getElementById('adminSection');
+                if (adminSection && adminSection.classList.contains('active')) {
+                    loadAdminOrders();
                 }
             }, 3000);
         }
         
-        console.log('✅ Sistema de actualización móvil completamente activado');
-        console.log('📱 Métodos activos: visibilitychange, focus, touch, scroll, requestAnimationFrame, setInterval');
+        console.log('✅ Sistema de actualización inicializado correctamente');
     </script>
 </body>
 </html>
