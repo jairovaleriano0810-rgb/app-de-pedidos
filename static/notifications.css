@@ -1,0 +1,204 @@
+/* ==============================================
+   ESTILOS PARA NOTIFICACIONES EN PÁGINA
+============================================== */
+
+.in-page-notification {
+    position: fixed;
+    top: 100px;
+    right: -400px;
+    width: 380px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    z-index: 10001;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    border-left: 5px solid #FF6B35;
+}
+
+.in-page-notification.show {
+    right: 20px;
+}
+
+.in-page-notification.success {
+    border-left-color: #4CAF50;
+}
+
+.in-page-notification.success .notification-header {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+}
+
+.in-page-notification.info {
+    border-left-color: #2196F3;
+}
+
+.in-page-notification.info .notification-header {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+}
+
+.in-page-notification.warning {
+    border-left-color: #FF9800;
+}
+
+.in-page-notification.warning .notification-header {
+    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+}
+
+.notification-header {
+    background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Righteous', cursive;
+    font-size: 1.1em;
+}
+
+.close-notification {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 1.5em;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.close-notification:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.notification-body {
+    padding: 20px;
+    color: #333;
+    font-size: 0.95em;
+    line-height: 1.6;
+}
+
+.notification-body strong {
+    color: #FF6B35;
+}
+
+.notification-body small {
+    color: #999;
+    font-size: 0.85em;
+}
+
+/* Animación de pulso para nuevas notificaciones */
+@keyframes notificationPulse {
+    0%, 100% {
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 10px 40px rgba(255, 107, 53, 0.6);
+    }
+}
+
+.in-page-notification.show {
+    animation: notificationPulse 1s ease-in-out 2;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .in-page-notification {
+        width: calc(100% - 40px);
+        right: -100%;
+    }
+    
+    .in-page-notification.show {
+        right: 20px;
+    }
+}
+
+/* ==============================================
+   BOTÓN PARA ACTIVAR NOTIFICACIONES
+============================================== */
+
+.enable-notifications-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 50px;
+    border: none;
+    font-weight: 700;
+    font-size: 1em;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+    transition: all 0.3s ease;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: bounce 2s infinite;
+}
+
+.enable-notifications-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6);
+}
+
+.enable-notifications-btn.hidden {
+    display: none;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Indicador de notificaciones activas */
+.notifications-indicator {
+    position: fixed;
+    top: 90px;
+    left: 20px;
+    background: white;
+    padding: 10px 15px;
+    border-radius: 25px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    font-size: 0.85em;
+    font-weight: 600;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: slideInLeft 0.6s ease-out;
+}
+
+.notifications-indicator.active {
+    color: #4CAF50;
+}
+
+.notifications-indicator.inactive {
+    color: #999;
+}
+
+.notification-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4CAF50;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.notification-dot.inactive {
+    background: #999;
+    animation: none;
+}

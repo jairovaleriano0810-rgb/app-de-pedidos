@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos - Sabor Ecuatoriano</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='notifications.css') }}">
+    
+    <style>
+        /* Botón Clean pequeño y compacto */
+        .clean-all-btn {
+            padding: 8px 15px;
+            background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(244, 67, 54, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .clean-all-btn:hover {
+            background: linear-gradient(135deg, #e53935 0%, #d81b60 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.5);
+        }
+
+        .clean-all-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Modal de confirmación de limpieza */
+        .clean-confirm-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clean-confirm-modal.show {
+            display: flex;
+        }
+
+        .clean-confirm-box {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: popup 0.4s ease;
+            text-align: center;
+        }
+
+        .clean-confirm-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+
+        .clean-confirm-box h3 {
+            font-family: 'Righteous', cursive;
+            color: #f44336;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .clean-confirm-box p {
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .clean-confirm-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .clean-confirm-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancel-clean {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-cancel-clean:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-confirm-clean {
+            background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
+            color: white;
+            box-shadow: 0 3px 10px rgba(244, 67, 54, 0.3);
+        }
+
+        .btn-confirm-clean:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ============================================
+         INDICADOR DE ESTADO ABIERTO/CERRADO
+    ============================================ -->
+    <div class="restaurant-status" id="restaurantStatus">
+        <div class="status-indicator status-open" id="statusIndicator"></div>
+        <span class="status-text-open" id="statusText">ABIERTO</span>
+    </div>
+
+    <!-- INDICADOR DE NOTIFICACIONES -->
+    <div class="notifications-indicator active" id="notificationsIndicator" style="display: none;">
+        <div class="notification-dot" id="notificationDot"></div>
+        <span id="notificationStatus">Notificaciones Activas</span>
+    </div>
+
+    <!-- BOTÓN PARA ACTIVAR NOTIFICACIONES -->
+    <button class="enable-notifications-btn hidden" id="enableNotificationsBtn">
+        🔔 Activar Notificaciones
+    </button>
+
+    <!-- OVERLAY CUANDO ESTÁ CERRADO (solo usuarios) -->
+    <div class="closed-overlay" id="closedOverlay">
+        <div class="closed-message">
+            <div class="closed-icon">🔒</div>
+            <h2>Lo sentimos</h2>
+            <p>En este momento estamos <strong>CERRADOS</strong></p>
+            <p style="margin-top: 15px; font-size: 1em;">
+                Por favor vuelve más tarde para hacer tu pedido.
+            </p>
+        </div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <h1>🍽️ Sabor Ecuatoriano</h1>
+            <a href="/logout" class="logout-btn">🚪 Cerrar sesión</a>
+            <p class="subtitle">Haz tu pedido fácil y rápido</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('order')">Hacer Pedido</button>
+            <button class="tab" onclick="switchTab('manage')">
+                Gestionar Pedidos
+                <span class="badge" id="orderCount">0</span>
+            </button>
+            {% if role == 'admin' %}
+            <button class="tab" onclick="switchTab('admin')">🔐 Admin</button>
+            {% endif %}
+        </div>
+
+        <!-- ============================================
+             SECCIÓN DE ADMIN
+        ============================================ -->
+        <div id="adminSection" class="content-section">
+            <h2>Panel de Administración</h2>
+
+            <!-- BOTÓN CLEAN PEQUEÑO -->
+            <button class="clean-all-btn" onclick="confirmCleanAll()">
+                🗑️ Clean
+            </button>
+
+            <!-- CONTROL DE ESTADO DEL RESTAURANTE -->
+            <div class="status-control">
+                <h3>🏪 Estado del Restaurante</h3>
+                <div class="status-toggle">
+                    <button class="toggle-btn toggle-btn-open active" id="btnOpen" onclick="setRestaurantStatus(true)">
+                        ✅ ABIERTO
+                    </button>
+                    <button class="toggle-btn toggle-btn-closed" id="btnClosed" onclick="setRestaurantStatus(false)">
+                        🔒 CERRADO
+                    </button>
+                </div>
+            </div>
+
+            <hr style="margin: 30px 0; border: none; border-top: 2px solid #eee;">
+
+            <h3>Agregar Producto</h3>
+            <div style="display: grid; gap: 15px; max-width: 600px; margin-bottom: 30px;">
+                <input id="newName" placeholder="Nombre del producto" style="padding: 12px; border-radius: 8px; border: 2px solid #eee; font-size: 1em;">
+                <input id="newDescription" placeholder="Descripción deliciosa" style="padding: 12px; border-radius: 8px; border: 2px solid #eee; font-size: 1em;">
+                <input id="newPrice" placeholder="Precio" type="number" step="0.01" style="padding: 12px; border-radius: 8px; border: 2px solid #eee; font-size: 1em;">
+                <select id="newCategory" style="padding: 12px; border-radius: 8px; border: 2px solid #eee; font-size: 1em;">
+                    <option value="empanadas">🥟 Empanadas</option>
+                    <option value="corviches">🐟 Corviches</option>
+                    <option value="gatos">🎁 Gatos Encerrados</option>
+                    <option value="bebidas">🥤 Bebidas</option>
+                </select>
+                <button onclick="addProduct()" style="padding: 15px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); color: white; border: none; border-radius: 10px; font-size: 1.1em; font-weight: 700; cursor: pointer; transition: all 0.3s;">
+                    ✨ Agregar Producto
+                </button>
+            </div>
+
+            <hr style="margin: 30px 0; border: none; border-top: 2px solid #eee;">
+
+            <h3>Productos Actuales</h3>
+            <div id="productsList" style="display: grid; gap: 15px; max-width: 800px;"></div>
+
+            <hr style="margin: 30px 0; border: none; border-top: 2px solid #eee;">
+
+            <h3>Pedidos Globales</h3>
+            <div id="adminOrders" class="orders-list"></div>
+        </div>
+
+        <!-- ============================================
+             SECCIÓN DE PEDIDOS
+        ============================================ -->
+        <div id="orderSection" class="content-section active">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px; align-items: start;">
+                <div id="menuContainer"></div>
+
+                <div>
+                    <div class="cart-summary">
+                        <h2>📋 Tu Pedido</h2>
+                        <div id="cartItems">
+                            <p style="color: #999; text-align: center; padding: 20px;">
+                                No hay productos seleccionados
+                            </p>
+                        </div>
+
+                        <button class="submit-order" onclick="submitOrder()" id="submitBtn" disabled>
+                            Enviar Pedido
+                        </button>
+
+                        <!-- BOTÓN DE PAGO -->
+                        <button class="submit-order" style="margin-top:10px;background:#2ecc71"
+                            onclick="showPayment()">
+                            💳 Ver datos de pago
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+             SECCIÓN DE GESTIÓN
+        ============================================ -->
+        <div id="manageSection" class="content-section">
+            <h3>Gestión de Pedidos</h3>
+            <div id="ordersList" class="orders-list">
+                <div class="empty-state">
+                    <h3>No hay pedidos todavía</h3>
+                    <p>Los pedidos aparecerán aquí en orden cronológico</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         MODAL DE CONFIRMACIÓN DE LIMPIEZA
+    ============================================ -->
+    <div id="cleanConfirmModal" class="clean-confirm-modal">
+        <div class="clean-confirm-box">
+            <div class="clean-confirm-icon">⚠️</div>
+            <h3>¿Eliminar Todos los Pedidos?</h3>
+            <p>Esta acción eliminará <strong>TODOS</strong> los pedidos actuales. Los usuarios serán notificados automáticamente.</p>
+            <p style="color: #999; font-size: 0.9em;">Esta acción no se puede deshacer.</p>
+            
+            <div class="clean-confirm-buttons">
+                <button class="btn-cancel-clean" onclick="closeCleanModal()">
+                    Cancelar
+                </button>
+                <button class="btn-confirm-clean" onclick="executeCleanAll()">
+                    Sí, Eliminar Todo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================
+         MODAL DE PAGO
+    ============================================ -->
+    <div id="paymentModal" class="payment-modal">
+        <div class="payment-box">
+            <h2>💳 Datos para el pago</h2>
+
+            <p>
+                <strong>Banco:</strong>
+                <span>Banco Pichincha</span>
+            </p>
+
+            <p>
+                <strong>Tipo:</strong>
+                <span>Cuenta de Ahorros</span>
+            </p>
+
+            <p>
+                <strong>Nombre:</strong>
+                <span>Fernando Lorenzo Valeriano Loor</span>
+            </p>
+
+            <p>
+                <strong>Número:</strong>
+                <span id="cuentaText">2204803284</span>
+                <button class="copy-btn" onclick="copyText('cuentaText')" title="Copiar número de cuenta">📋</button>
+            </p>
+
+            <p>
+                <strong>Cédula:</strong>
+                <span id="cedulaText">1309102372</span>
+                <button class="copy-btn" onclick="copyText('cedulaText')" title="Copiar cédula">📋</button>
+            </p>
+
+            <p>
+                <strong>Celular:</strong>
+                <span id="celularText">0958609758</span>
+                <button class="copy-btn" onclick="copyText('celularText')" title="Copiar celular">📋</button>
+            </p>
+
+            <p style="background: var(--cream); border-left: 4px solid var(--primary);">
+                <strong>Referencia:</strong>
+                <span>Pedido Sabor Ecuatoriano</span>
+            </p>
+
+            <button onclick="closePayment()">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- CARGAR SISTEMA DE NOTIFICACIONES -->
+    <script src="{{ url_for('static', filename='notifications.js') }}"></script>
+
+    <script>
+        const USER_ROLE = "{{ role }}";
+        
+        const cart = {};
+        let orders = [];
+        let products = {};
+        let prices = {};
+        let isRestaurantOpen = true;
+
+        // ============================================
+        // SISTEMA DE LIMPIEZA DE PEDIDOS
+        // ============================================
+        
+        function confirmCleanAll() {
+            document.getElementById('cleanConfirmModal').classList.add('show');
+        }
+
+        function closeCleanModal() {
+            document.getElementById('cleanConfirmModal').classList.remove('show');
+        }
+
+        function executeCleanAll() {
+            fetch('/api/orders/clean-all', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                closeCleanModal();
+                
+                alert(`✅ ${data.deleted_count} pedido(s) eliminado(s) exitosamente.\nLos usuarios han sido notificados.`);
+                
+                // Recargar pedidos
+                loadOrdersFromServer();
+                loadAdminOrders();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar pedidos');
+            });
+        }
+
+        // Verificar bandera de limpieza (solo usuarios)
+        function checkCleanFlag() {
+            if (USER_ROLE === 'admin') return;
+            
+            fetch('/api/check-clean-flag')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.cleaned) {
+                        console.log('🔔 LIMPIEZA DETECTADA - Mostrando notificación al usuario');
+                        
+                        // Notificación del navegador
+                        window.notificationSystem.showBrowserNotification(
+                            "🔔 Sistema Actualizado",
+                            "El administrador ha limpiado todos los pedidos. No te preocupes, puedes hacer nuevos pedidos cuando desees.",
+                            "🗑️"
+                        );
+                        
+                        // Notificación visual en pantalla
+                        window.notificationSystem.showInPageNotification(
+                            "🔔 Actualización del Sistema",
+                            `<strong>Atención:</strong> El administrador ha limpiado todos los pedidos del sistema.<br>
+                            <small>No te preocupes, esto es parte del mantenimiento normal. Puedes hacer nuevos pedidos cuando desees.</small>`,
+                            'warning'
+                        );
+                        
+                        // Sonido de notificación
+                        window.notificationSystem.playStatusChangeSound();
+                        
+                        // Alert adicional para asegurar que lo vean
+                        setTimeout(() => {
+                            alert('🔔 AVISO IMPORTANTE\n\nEl administrador ha limpiado todos los pedidos del sistema para mantener la página actualizada.\n\n✅ No te preocupes, todo está bien.\n✅ Puedes hacer nuevos pedidos normalmente.');
+                        }, 500);
+                        
+                        // Confirmar que vio la notificación
+                        fetch('/api/confirm-clean-notification', {
+                            method: 'POST'
+                        });
+                        
+                        // Recargar pedidos inmediatamente
+                        loadOrdersFromServer();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error verificando limpieza:', error);
+                });
+        }
+
+        // ============================================
+        // INICIALIZAR SISTEMA DE NOTIFICACIONES
+        // ============================================
+        
+        function checkNotificationPermission() {
+            const enableBtn = document.getElementById('enableNotificationsBtn');
+            const indicator = document.getElementById('notificationsIndicator');
+            const indicatorDot = document.getElementById('notificationDot');
+            const indicatorStatus = document.getElementById('notificationStatus');
+            
+            if (Notification.permission === 'default') {
+                enableBtn.classList.remove('hidden');
+                indicator.style.display = 'none';
+            } else if (Notification.permission === 'granted') {
+                enableBtn.classList.add('hidden');
+                indicator.style.display = 'flex';
+                indicator.className = 'notifications-indicator active';
+                indicatorDot.className = 'notification-dot';
+                indicatorStatus.textContent = 'Notificaciones Activas';
+            } else {
+                enableBtn.classList.add('hidden');
+                indicator.style.display = 'flex';
+                indicator.className = 'notifications-indicator inactive';
+                indicatorDot.className = 'notification-dot inactive';
+                indicatorStatus.textContent = 'Notificaciones Bloqueadas';
+            }
+        }
+
+        document.getElementById('enableNotificationsBtn')?.addEventListener('click', () => {
+            window.notificationSystem.requestPermission();
+            setTimeout(checkNotificationPermission, 500);
+        });
+
+        checkNotificationPermission();
+
+        // ============================================
+        // SISTEMA DE MENSAJES DE BIENVENIDA
+        // ============================================
+        const welcomeMessages = {
+            morning: [
+                "¡Buenos días! ☀️ Empieza tu mañana con el delicioso sabor ecuatoriano",
+                "¡Buen día! 🌅 Nada mejor que nuestras empanadas para comenzar la mañana",
+                "¡Hola! ☕ ¿Listo para un desayuno con sabor ecuatoriano?",
+                "¡Buenos días! 🌤️ El mejor momento para disfrutar nuestras delicias",
+                "¡Qué tengas un excelente día! 🌻 Déjanos endulzar tu mañana",
+                "¡Buen día! 🌞 Comienza con energía y buen sabor ecuatoriano",
+                "¡Buenos días! 🥐 Tu dosis matutina de sabor ecuatoriano te espera"
+            ],
+            afternoon: [
+                "¡Buenas tardes! 🌤️ Perfecto para un break delicioso",
+                "¡Hola! 🌆 La hora ideal para nuestras empanadas calentitas",
+                "¡Buenas tardes! ☕ Dale un respiro a tu día con sabor ecuatoriano",
+                "¡Qué buena tarde! 🌤️ Recarga energías con nuestros productos",
+                "¡Hola! 🍽️ La mejor pausa del día comienza aquí",
+                "¡Buenas tardes! 🌅 Un antojo a tiempo siempre cae bien",
+                "¡Hola! ⏰ Hora de consentirte con algo delicioso"
+            ],
+            evening: [
+                "¡Buenas noches! 🌙 Termina tu día con el mejor sabor ecuatoriano",
+                "¡Hola! ✨ La noche es perfecta para nuestras delicias",
+                "¡Buenas noches! 🌃 Satisface tus antojos nocturnos aquí",
+                "¡Qué buena noche! 🌙 El sabor ecuatoriano te acompaña siempre",
+                "¡Hola! 🌠 Disfruta la noche con nuestros productos artesanales",
+                "¡Buenas noches! 🌌 Termina el día de la mejor manera",
+                "¡Hola! 🌙 Los mejores sabores para cerrar tu jornada"
+            ]
+        };
+
+        function showWelcomeMessage() {
+            const hour = new Date().getHours();
+            let timeOfDay;
+            
+            if (hour >= 5 && hour < 12) {
+                timeOfDay = 'morning';
+            } else if (hour >= 12 && hour < 19) {
+                timeOfDay = 'afternoon';
+            } else {
+                timeOfDay = 'evening';
+            }
+            
+            const messages = welcomeMessages[timeOfDay];
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            
+            const toast = document.createElement('div');
+            toast.className = 'welcome-toast';
+            toast.innerHTML = `
+                <div class="welcome-toast-content">
+                    <h3>🍽️ ¡Bienvenido${USER_ROLE === 'admin' ? ' Admin' : ''}!</h3>
+                    <p>${randomMessage}</p>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 500);
+            }, 4000);
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(showWelcomeMessage, 500);
+        });
+
+        // ============================================
+        // CONFIGURACIÓN DE CATEGORÍAS
+        // ============================================
+        const categoryEmojis = {
+            'empanadas': '🥟',
+            'corviches': '🐟',
+            'gatos': '🎁',
+            'bebidas': '🥤'
+        };
+
+        const categoryNames = {
+            'empanadas': 'Empanadas',
+            'corviches': 'Corviches',
+            'gatos': 'Gatos Encerrados',
+            'bebidas': 'Bebidas'
+        };
+
+        // ============================================
+        // GESTIÓN DE ESTADO DEL RESTAURANTE
+        // ============================================
+        
+        function loadRestaurantStatus() {
+            fetch('/api/restaurant-status')
+                .then(r => r.json())
+                .then(data => {
+                    isRestaurantOpen = data.is_open;
+                    updateStatusUI();
+                    
+                    if (USER_ROLE !== 'admin' && !isRestaurantOpen) {
+                        document.getElementById('closedOverlay').classList.add('show');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando estado:', error);
+                });
+        }
+
+        function updateStatusUI() {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            const btnOpen = document.getElementById('btnOpen');
+            const btnClosed = document.getElementById('btnClosed');
+            const overlay = document.getElementById('closedOverlay');
+            
+            if (isRestaurantOpen) {
+                indicator.className = 'status-indicator status-open';
+                statusText.textContent = 'ABIERTO';
+                statusText.className = 'status-text-open';
+                
+                if (btnOpen && btnClosed) {
+                    btnOpen.classList.add('active');
+                    btnClosed.classList.remove('active');
+                }
+                
+                if (overlay) {
+                    overlay.classList.remove('show');
+                }
+            } else {
+                indicator.className = 'status-indicator status-closed';
+                statusText.textContent = 'CERRADO';
+                statusText.className = 'status-text-closed';
+                
+                if (btnOpen && btnClosed) {
+                    btnOpen.classList.remove('active');
+                    btnClosed.classList.add('active');
+                }
+                
+                if (USER_ROLE !== 'admin' && overlay) {
+                    overlay.classList.add('show');
+                }
+            }
+        }
+
+        function setRestaurantStatus(isOpen) {
+            if (USER_ROLE !== 'admin') return;
+            
+            fetch('/api/restaurant-status', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_open: isOpen })
+            })
+            .then(r => r.json())
+            .then(data => {
+                isRestaurantOpen = data.is_open;
+                updateStatusUI();
+                
+                const message = isOpen ? '✅ Restaurante ABIERTO' : '🔒 Restaurante CERRADO';
+                alert(message);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al actualizar el estado');
+            });
+        }
+
+        // ============================================
+        // CARGAR PRODUCTOS
+        // ============================================
+        
+        function loadProducts() {
+            fetch('/api/products')
+            .then(r => r.json())
+            .then(data => {
+                products = data;
+                
+                prices = {};
+                for (let cat in products) {
+                    products[cat].forEach(p => {
+                        prices[p.id] = p.price;
+                    });
+                }
+                
+                renderMenu();
+                
+                if (USER_ROLE === 'admin') {
+                    renderProductsList();
+                }
+                
+                console.log('Productos cargados y menú actualizado');
+            })
+            .catch(error => {
+                console.error('Error cargando productos:', error);
+            });
+        }
+
+        function renderMenu() {
+            const menuContainer = document.getElementById('menuContainer');
+            let html = '';
+
+            const categoryOrder = ['empanadas', 'corviches', 'gatos', 'bebidas'];
+
+            categoryOrder.forEach(category => {
+                if (!products[category] || products[category].length === 0) return;
+
+                const emoji = categoryEmojis[category] || '🍴';
+                const categoryName = categoryNames[category] || category;
+                const price = products[category][0].price.toFixed(2);
+
+                html += `
+                    <h2 style="font-family: 'Righteous', cursive; font-size: 2em; margin: 30px 0 20px; color: var(--primary);">
+                        ${emoji} ${categoryName} $${price}
+                    </h2>
+                    <div class="menu-grid">
+                `;
+
+                products[category].forEach(product => {
+                    html += `
+                        <div class="menu-item">
+                            <h3>${product.name}</h3>
+                            <p style="color: #666; margin: 10px 0;">${product.description}</p>
+                            <div class="quantity-control">
+                                <button onclick="changeQuantity('${product.id}', -1)">−</button>
+                                <span class="quantity-display" id="qty-${product.id}">0</span>
+                                <button onclick="changeQuantity('${product.id}', 1)">+</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            });
+
+            menuContainer.innerHTML = html;
+            
+            for (let productId in cart) {
+                const qtyElement = document.getElementById(`qty-${productId}`);
+                if (qtyElement && cart[productId] > 0) {
+                    qtyElement.textContent = cart[productId];
+                }
+            }
+        }
+
+        function getProductName(id){
+            for(let cat in products){
+                const p = products[cat].find(x=>x.id===id);
+                if(p) return p.name;
+            }
+            return id;
+        }
+
+        // ============================================
+        // CARRITO DE COMPRAS
+        // ============================================
+        
+        function changeQuantity(item, delta) {
+            if (!cart[item]) cart[item] = 0;
+            cart[item] = Math.max(0, cart[item] + delta);
+            const qtyElement = document.getElementById(`qty-${item}`);
+            if (qtyElement) {
+                qtyElement.textContent = cart[item];
+            }
+            updateCart();
+        }
+
+        function updateCart() {
+            const cartItems = document.getElementById('cartItems');
+            const submitBtn = document.getElementById('submitBtn');
+            const items = Object.entries(cart).filter(([_, qty]) => qty > 0);
+
+            if (items.length === 0) {
+                cartItems.innerHTML = '<p style="color:#999;text-align:center">No hay productos</p>';
+                submitBtn.disabled = true;
+            } else {
+                let total = 0;
+                cartItems.innerHTML = items.map(([item, qty]) => {
+                    const subtotal = (prices[item] || 0) * qty;
+                    total += subtotal;
+                    return `
+                        <div class="cart-item">
+                            <span><strong>${getProductName(item)}</strong></span>
+                            <span>$${subtotal.toFixed(2)}</span>
+                        </div>
+                    `;
+                }).join('') + `
+                    <hr>
+                    <div class="cart-item">
+                        <strong>Total</strong>
+                        <strong style="color:var(--primary)">$${total.toFixed(2)}</strong>
+                    </div>
+                `;
+                submitBtn.disabled = false;
+            }
+        }
+
+        function submitOrder() {
+            if (!isRestaurantOpen && USER_ROLE !== 'admin') {
+                alert('⚠️ Lo sentimos, el restaurante está cerrado en este momento.');
+                return;
+            }
+
+            const items = Object.entries(cart)
+                .filter(([_, qty]) => qty > 0)
+                .map(([k, v]) => ({
+                    name: k,
+                    quantity: v
+                }));
+
+            if (items.length === 0) return;
+
+            fetch('/api/orders', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ items })
+            })
+            .then(r=>r.json())
+            .then(order=>{
+                alert("¡Pedido enviado con éxito!");
+
+                Object.keys(cart).forEach(k=>{
+                    cart[k]=0;
+                    const qtyElement = document.getElementById(`qty-${k}`);
+                    if (qtyElement) {
+                        qtyElement.textContent = 0;
+                    }
+                });
+                updateCart();
+
+                loadOrdersFromServer();
+                
+                if (USER_ROLE === 'admin') {
+                    loadAdminOrders();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al enviar el pedido');
+            });
+        }
+
+        // ============================================
+        // GESTIÓN DE PEDIDOS CON NOTIFICACIONES
+        // ============================================
+        
+        function renderOrders() {
+            const ordersList = document.getElementById('ordersList');
+            
+            if (orders.length === 0) {
+                ordersList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No hay pedidos todavía</h3>
+                        <p>Los pedidos aparecerán aquí en orden cronológico</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const statusText = {
+                pending: 'Pendiente',
+                preparing: 'Preparando',
+                ready: 'Listo',
+                delivered: 'Entregado'
+            };
+
+            ordersList.innerHTML = orders.map(order => {
+                let total = 0;
+                
+                let displayName = order.username;
+                if (!displayName && order.user_id) {
+                    if (order.user_id === 'admin') {
+                        displayName = 'Administrador';
+                    } else if (order.user_id.includes('_')) {
+                        const parts = order.user_id.split('_');
+                        displayName = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+                    } else {
+                        displayName = 'Usuario';
+                    }
+                }
+
+                const animateClass = window.shouldAnimateOrders ? ' animate' : '';
+
+                return `
+                    <div class="order-card${animateClass}">
+                        <div class="order-header">
+                            <div>
+                                <div class="order-number">Pedido #${order.id}</div>
+                                ${displayName ? `<div class="order-user">👤 ${displayName}</div>` : ''}
+                                <div class="order-time">
+                                    ${new Date(order.timestamp).toLocaleString('es-EC')}
+                                </div>
+                            </div>
+                            <span class="status-badge status-${order.status}">
+                                ${statusText[order.status]}
+                            </span>
+                        </div>
+
+                        <div class="order-items">
+                            ${order.items.map(i=>{
+                                const sub = (prices[i.name] || 0) * i.quantity;
+                                total += sub;
+                                return `
+                                    <div class="order-item">
+                                        <span>${getProductName(i.name)} x${i.quantity}</span>
+                                        <span>$${sub.toFixed(2)}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+
+                        <div class="order-item" style="font-weight:700">
+                            <span>Total</span>
+                            <span style="color:var(--primary)">
+                                $${total.toFixed(2)}
+                            </span>
+                        </div>
+
+                        ${USER_ROLE === 'admin' ? `
+                        <div class="status-buttons">
+                            ${order.status==='pending' ? `
+                                <button class="status-btn btn-preparing" onclick="updateOrderStatus(${order.id},'preparing')">
+                                    🍳 Marcar Preparando
+                                </button>` : ''}
+
+                            ${order.status==='preparing' ? `
+                                <button class="status-btn btn-ready" onclick="updateOrderStatus(${order.id},'ready')">
+                                    ✅ Marcar Listo
+                                </button>` : ''}
+
+                            ${order.status==='ready' ? `
+                                <button class="status-btn btn-delivered" onclick="updateOrderStatus(${order.id},'delivered')">
+                                    🚀 Marcar Entregado
+                                </button>` : ''}
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateOrderStatus(orderId, newStatus) {
+            fetch(`/api/orders/${orderId}`, {
+                method: 'PUT',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(r=>r.json())
+            .then(()=>{
+                window.shouldAnimateOrders = true;
+                
+                loadOrdersFromServer();
+                if (USER_ROLE === 'admin') {
+                    loadAdminOrders();
+                }
+                
+                setTimeout(() => {
+                    window.shouldAnimateOrders = false;
+                }, 600);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al actualizar el estado');
+            });
+        }
+
+        function loadOrdersFromServer(){
+            fetch('/api/orders')
+            .then(r=>r.json())
+            .then(data=>{
+                if (USER_ROLE === 'admin') {
+                    window.notificationSystem.checkForNewOrders(data);
+                }
+                
+                if (USER_ROLE === 'user') {
+                    window.notificationSystem.checkForStatusChanges(data);
+                }
+                
+                orders = data;
+                document.getElementById('orderCount').textContent = orders.length;
+                renderOrders();
+            })
+            .catch(error => {
+                console.error('Error cargando pedidos:', error);
+            });
+        }
+
+        function loadAdminOrders(){
+            const adminOrders = document.getElementById('adminOrders');
+            
+            if (!adminOrders) {
+                console.log('Elemento adminOrders no encontrado');
+                return;
+            }
+            
+            fetch('/api/orders')
+            .then(r=>r.json())
+            .then(data=>{
+                console.log('Pedidos globales actualizados:', data.length);
+                
+                if (USER_ROLE === 'admin') {
+                    window.notificationSystem.checkForNewOrders(data);
+                }
+                
+                if (data.length === 0) {
+                    adminOrders.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No hay pedidos todavía</p>';
+                    return;
+                }
+
+                const statusText = {
+                    pending: 'Pendiente',
+                    preparing: 'Preparando',
+                    ready: 'Listo',
+                    delivered: 'Entregado'
+                };
+
+                adminOrders.innerHTML = data.map(order=>{
+                    let total = 0;
+                    
+                    let displayName = order.username;
+                    if (!displayName && order.user_id) {
+                        if (order.user_id === 'admin') {
+                            displayName = 'Administrador';
+                        } else if (order.user_id.includes('_')) {
+                            const parts = order.user_id.split('_');
+                            displayName = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+                        } else {
+                            displayName = 'Usuario';
+                        }
+                    }
+
+                    const animateClass = window.shouldAnimateOrders ? ' animate' : '';
+
+                    return `
+                        <div class="order-card${animateClass}">
+                            <div class="order-header">
+                                <div>
+                                    <div class="order-number">Pedido #${order.id}</div>
+                                    ${displayName ? `<div class="order-user">👤 ${displayName}</div>` : ''}
+                                    <div class="order-time">
+                                        ${new Date(order.timestamp).toLocaleString('es-EC')}
+                                    </div>
+                                </div>
+                                <span class="status-badge status-${order.status}">
+                                    ${statusText[order.status]}
+                                </span>
+                            </div>
+
+                            <div class="order-items">
+                                ${order.items.map(i=>{
+                                    const sub = (prices[i.name] || 0)*i.quantity;
+                                    total += sub;
+                                    return `
+                                        <div class="order-item">
+                                            <span>${getProductName(i.name)} x${i.quantity}</span>
+                                            <span>$${sub.toFixed(2)}</span>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+
+                            <div class="order-item" style="font-weight:700">
+                                <span>Total</span>
+                                <span style="color:var(--primary)">
+                                    $${total.toFixed(2)}
+                                </span>
+                            </div>
+
+                            <div class="status-buttons">
+                                ${order.status==='pending' ? `
+                                    <button class="status-btn btn-preparing" onclick="updateOrderStatus(${order.id},'preparing')">
+                                        🍳 Marcar Preparando
+                                    </button>` : ''}
+
+                                ${order.status==='preparing' ? `
+                                    <button class="status-btn btn-ready" onclick="updateOrderStatus(${order.id},'ready')">
+                                        ✅ Marcar Listo
+                                    </button>` : ''}
+
+                                ${order.status==='ready' ? `
+                                    <button class="status-btn btn-delivered" onclick="updateOrderStatus(${order.id},'delivered')">
+                                        🚀 Marcar Entregado
+                                    </button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            })
+            .catch(error => {
+                console.error('Error cargando pedidos globales:', error);
+                adminOrders.innerHTML = '<p style="color:red; text-align: center; padding: 20px;">Error cargando pedidos. Reintentando...</p>';
+            });
+        }
+
+        // ============================================
+        // GESTIÓN DE PRODUCTOS (ADMIN)
+        // ============================================
+        
+        function addProduct() {
+            const name = document.getElementById('newName').value.trim();
+            const description = document.getElementById('newDescription').value.trim();
+            const price = parseFloat(document.getElementById('newPrice').value);
+            const category = document.getElementById('newCategory').value;
+
+            if (!name || !description || isNaN(price) || price <= 0) {
+                alert('Por favor completa todos los campos correctamente');
+                return;
+            }
+
+            fetch('/api/products', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    name: name,
+                    description: description,
+                    price: price,
+                    category: category
+                })
+            })
+            .then(r => r.json())
+            .then(() => {
+                alert('✨ ¡Producto agregado con éxito!');
+                
+                document.getElementById('newName').value = '';
+                document.getElementById('newDescription').value = '';
+                document.getElementById('newPrice').value = '';
+                
+                loadProducts();
+                
+                console.log('Producto agregado - actualizando todas las vistas');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al agregar producto');
+            });
+        }
+
+        function deleteProduct(productId) {
+            if (!confirm('¿Estás seguro de eliminar este producto?')) return;
+
+            fetch(`/api/products/${productId}`, {
+                method: 'DELETE'
+            })
+            .then(r => r.json())
+            .then(() => {
+                alert('✅ Producto eliminado con éxito');
+                
+                loadProducts();
+                
+                console.log('Producto eliminado - actualizando todas las vistas');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar producto');
+            });
+        }
+
+        function renderProductsList() {
+            const productsList = document.getElementById('productsList');
+            let html = '';
+
+            for (let category in products) {
+                const emoji = categoryEmojis[category] || '🍴';
+                const categoryName = categoryNames[category] || category;
+
+                products[category].forEach(product => {
+                    html += `
+                        <div style="background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 1.1em; margin-bottom: 5px;">
+                                    ${emoji} ${product.name}
+                                </div>
+                                <div style="color: #666; font-size: 0.9em; margin-bottom: 5px;">
+                                    ${product.description}
+                                </div>
+                                <div style="color: var(--primary); font-weight: 700;">
+                                    $${product.price.toFixed(2)} - ${categoryName}
+                                </div>
+                            </div>
+                            <button onclick="deleteProduct('${product.id}')" style="background: #ff4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                                🗑️ Eliminar
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+
+            productsList.innerHTML = html || '<p>No hay productos todavía</p>';
+        }
+
+        // ============================================
+        // MODAL DE PAGO
+        // ============================================
+        
+        function showPayment(){
+            document.getElementById("paymentModal").style.display = "flex";
+        }
+
+        function closePayment(){
+            document.getElementById("paymentModal").style.display = "none";
+        }
+
+        function copyText(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text);
+
+            const btn = event.target;
+            const original = btn.innerHTML;
+            btn.innerHTML = "✔";
+            btn.style.background = "#2ecc71";
+
+            setTimeout(() => {
+                btn.innerHTML = original;
+                btn.style.background = "";
+            }, 1200);
+        }
+
+        // ============================================
+        // NAVEGACIÓN ENTRE TABS
+        // ============================================
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+
+            if (tab === 'order') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('orderSection').classList.add('active');
+            } 
+            else if (tab === 'manage') {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('manageSection').classList.add('active');
+                loadOrdersFromServer();
+            }
+            else if (tab === 'admin') {
+                document.querySelectorAll('.tab')[2].classList.add('active');
+                document.getElementById('adminSection').classList.add('active');
+                loadAdminOrders();
+                renderProductsList();
+            }
+        }
+
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        
+        loadProducts();
+        updateCart();
+        loadRestaurantStatus();
+        
+        fetch('/api/orders')
+            .then(r => r.json())
+            .then(data => {
+                window.notificationSystem.initializeStates(data);
+                orders = data;
+                document.getElementById('orderCount').textContent = orders.length;
+                renderOrders();
+            });
+
+        setInterval(loadOrdersFromServer, 3000);
+        setInterval(loadRestaurantStatus, 10000);
+        setInterval(loadProducts, 10000);
+        
+        // Verificar bandera de limpieza cada 1 SEGUNDO (solo usuarios) - MUY FRECUENTE
+        if (USER_ROLE === 'user') {
+            setInterval(checkCleanFlag, 1000);
+            // También verificar inmediatamente
+            checkCleanFlag();
+        }
+        
+        if (USER_ROLE === 'admin') {
+            setInterval(() => {
+                const adminSection = document.getElementById('adminSection');
+                if (adminSection && adminSection.classList.contains('active')) {
+                    loadAdminOrders();
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

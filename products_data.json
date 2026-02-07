@@ -1,0 +1,52 @@
+{
+  "empanadas": [
+    {
+      "id": "empanada-queso",
+      "name": "Empanada de Queso",
+      "price": 1.0,
+      "description": "Deliciosas empanadas rellenas de queso fresco"
+    },
+    {
+      "id": "empanada-pollo",
+      "name": "Empanada de Pollo",
+      "price": 1.0,
+      "description": "Empanadas jugosas rellenas de pollo sazonado"
+    }
+  ],
+  "corviches": [
+    {
+      "id": "corviche",
+      "name": "Corviche Clásico",
+      "price": 1.0,
+      "description": "Delicia costeña de verde y pescado"
+    }
+  ],
+  "gatos": [
+    {
+      "id": "gato-encerrado",
+      "name": "Gato Encerrado Tradicional",
+      "price": 1.0,
+      "description": "Tradicional bocadito ecuatoriano"
+    }
+  ],
+  "bebidas": [
+    {
+      "id": "coca-cola",
+      "name": "Coca Cola",
+      "price": 0.5,
+      "description": "Refrescante bebida"
+    },
+    {
+      "id": "fanta",
+      "name": "Fanta",
+      "price": 0.5,
+      "description": "Sabor naranja burbujeante"
+    },
+    {
+      "id": "sprite",
+      "name": "Sprite",
+      "price": 0.5,
+      "description": "Lima-limón refrescante"
+    }
+  ]
+}

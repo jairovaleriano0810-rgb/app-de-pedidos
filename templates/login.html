@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sabor Ecuatoriano</title>
+    <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            max-width: 450px;
+            width: 100%;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            font-family: 'Righteous', cursive;
+            font-size: 2.5em;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .login-box h2 {
+            font-family: 'Righteous', cursive;
+            font-size: 1.8em;
+            color: var(--dark);
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        .login-box form select,
+        .login-box form input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid #eee;
+            font-size: 1em;
+            font-family: 'Work Sans', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .login-box form select:focus,
+        .login-box form input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+        }
+
+        .login-box form button {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            font-family: 'Righteous', cursive;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+            margin-top: 10px;
+        }
+
+        .login-box form button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 107, 53, 0.5);
+        }
+
+        .login-box form button:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            background: #ffe6e6;
+            color: #d32f2f;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #d32f2f;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .info-box {
+            background: var(--cream);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .info-box strong {
+            color: var(--primary);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        #userFields, #adminFields {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Botón de contacto al creador */
+        .creator-contact-btn {
+            width: 100%;
+            padding: 15px;
+            margin-top: 15px;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            background: white;
+            color: var(--primary);
+            font-family: 'Work Sans', sans-serif;
+            font-weight: 700;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .creator-contact-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        /* Modal de contacto */
+        .creator-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .creator-modal.show {
+            display: flex;
+        }
+
+        .creator-modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 0;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: popup 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes popup {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.1);
+            border: none;
+            color: white;
+            font-size: 2em;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        .close-modal:hover {
+            background: rgba(0, 0, 0, 0.2);
+            transform: rotate(90deg);
+        }
+
+        .creator-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 40px 30px 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .creator-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .creator-header h2 {
+            margin: 0;
+            font-family: 'Righteous', cursive;
+            font-size: 1.8em;
+        }
+
+        .creator-info {
+            padding: 30px;
+        }
+
+        .creator-name,
+        .creator-phone {
+            background: var(--cream);
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .creator-name .label,
+        .creator-phone .label {
+            font-weight: 700;
+            color: var(--dark);
+            font-size: 1em;
+        }
+
+        .creator-name .value,
+        .creator-phone .value {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 1.1em;
+        }
+
+        .copy-phone-btn {
+            background: var(--primary);
+            border: none;
+            color: white;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2em;
+        }
+
+        .copy-phone-btn:hover {
+            background: var(--secondary);
+            transform: scale(1.1);
+        }
+
+        .creator-description {
+            text-align: center;
+            color: #666;
+            margin: 20px 0;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+
+        .whatsapp-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 15px;
+            background: #25D366;
+            color: white;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
+        }
+
+        .whatsapp-btn:hover {
+            background: #20BA5A;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(37, 211, 102, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .creator-modal-content {
+                margin: 20px;
+            }
+
+            .creator-header {
+                padding: 30px 20px 20px;
+            }
+
+            .creator-info {
+                padding: 20px;
+            }
+
+            .creator-name,
+            .creator-phone {
+                flex-direction: column;
+                text-align: center;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <!-- Header principal con título y emoji -->
+            <div class="login-header">
+                <h1>🍽️ Sabor Ecuatoriano</h1>
+                <p>Bienvenido, inicia sesión para continuar</p>
+            </div>
+
+            <!-- Título de la sección -->
+            <h2>Iniciar sesión</h2>
+
+            <!-- Mensajes de error -->
+            {% if error %}
+            <div class="error-message">
+                ⚠️ {{ error }}
+            </div>
+            {% endif %}
+
+            <!-- Formulario -->
+            <form method="POST">
+                <div class="form-group">
+                    <label for="role">Tipo de Usuario</label>
+                    <select name="role" id="role" onchange="toggleFields(this.value)">
+                        <option value="user">👤 Usuario</option>
+                        <option value="admin">🔐 Administrador</option>
+                    </select>
+                </div>
+
+                <!-- Campos para usuarios -->
+                <div id="userFields">
+                    <div class="form-group">
+                        <label for="name">Nombre</label>
+                        <input type="text" name="name" id="name" placeholder="Ingresa tu nombre" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lastname">Apellido</label>
+                        <input type="text" name="lastname" id="lastname" placeholder="Ingresa tu apellido" required>
+                    </div>
+                </div>
+
+                <!-- Campos para administrador -->
+                <div id="adminFields" style="display:none">
+                    <div class="form-group">
+                        <label for="code">Código Secreto</label>
+                        <input type="password" name="code" id="code" placeholder="Ingresa el código de administrador">
+                    </div>
+                </div>
+
+                <!-- Botón de envío -->
+                <button type="submit">Entrar</button>
+            </form>
+
+            <!-- Info box al final -->
+            <div class="info-box">
+                <strong>💡 Información</strong>
+                <p><strong>Usuarios:</strong> Ingresa con tu nombre y apellido</p>
+                <p><strong>Administradores:</strong> Selecciona "Administrador" e ingresa tu código secreto</p>
+            </div>
+
+            <!-- Botón de contacto del creador -->
+            <button type="button" onclick="showCreatorContact()" class="creator-contact-btn">
+                👨‍💻 Contactar al Creador
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de contacto del creador -->
+    <div id="creatorModal" class="creator-modal">
+        <div class="creator-modal-content">
+            <button class="close-modal" onclick="closeCreatorModal()">×</button>
+            
+            <div class="creator-header">
+                <div class="creator-icon">👨‍💻</div>
+                <h2>Creador de la Página</h2>
+            </div>
+
+            <div class="creator-info">
+                <div class="creator-name">
+                    <span class="label">👤 Nombre:</span>
+                    <span class="value">Jhon Jairo</span>
+                </div>
+
+                <div class="creator-phone">
+                    <span class="label">📱 Teléfono:</span>
+                    <span class="value" id="phoneNumber">+593 0993676810</span>
+                    <button class="copy-phone-btn" onclick="copyPhone()" title="Copiar número">
+                        📋
+                    </button>
+                </div>
+
+                <div class="creator-description">
+                    <p>¿Necesitas ayuda con la página o tienes alguna consulta? 
+                    ¡No dudes en contactarme!</p>
+                </div>
+
+                <a href="https://wa.me/5930993676810" target="_blank" class="whatsapp-btn">
+                    💬 Escribir por WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleFields(role){
+            const userFields = document.getElementById('userFields');
+            const adminFields = document.getElementById('adminFields');
+            const nameInput = document.getElementById('name');
+            const lastnameInput = document.getElementById('lastname');
+            const codeInput = document.getElementById('code');
+
+            if (role === 'user') {
+                userFields.style.display = 'block';
+                adminFields.style.display = 'none';
+                nameInput.required = true;
+                lastnameInput.required = true;
+                codeInput.required = false;
+            } else {
+                userFields.style.display = 'none';
+                adminFields.style.display = 'block';
+                nameInput.required = false;
+                lastnameInput.required = false;
+                codeInput.required = true;
+            }
+        }
+
+        function showCreatorContact() {
+            document.getElementById('creatorModal').classList.add('show');
+        }
+
+        function closeCreatorModal() {
+            document.getElementById('creatorModal').classList.remove('show');
+        }
+
+        function copyPhone() {
+            const phoneText = document.getElementById('phoneNumber').innerText;
+            navigator.clipboard.writeText(phoneText);
+
+            const btn = event.target;
+            const original = btn.innerHTML;
+            btn.innerHTML = "✔";
+            btn.style.background = "#2ecc71";
+
+            setTimeout(() => {
+                btn.innerHTML = original;
+                btn.style.background = "";
+            }, 1500);
+        }
+
+        // Cerrar modal al hacer clic fuera
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('creatorModal');
+            if (event.target === modal) {
+                closeCreatorModal();
+            }
+        });
+    </script>
+</body>
+</html>
