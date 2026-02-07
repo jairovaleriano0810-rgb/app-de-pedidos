@@ -1,5 +1,5 @@
 // ==============================================
-// SISTEMA DE NOTIFICACIONES CON SONIDO
+// SISTEMA DE NOTIFICACIONES CON SONIDO (CORREGIDO)
 // ==============================================
 
 class NotificationSystem {
@@ -8,6 +8,10 @@ class NotificationSystem {
         this.lastOrderStates = new Map();
         this.audioContext = null;
         this.notificationsEnabled = false;
+        this.isPlayingSound = false; // NUEVO: Prevenir sonidos simultáneos
+        this.lastNotificationTime = 0; // NUEVO: Cooldown entre notificaciones
+        this.NOTIFICATION_COOLDOWN = 2000; // 2 segundos mínimo entre notificaciones
+        this.processedOrderIds = new Set(); // NUEVO: Track de pedidos ya procesados
         this.init();
     }
 
@@ -49,10 +53,43 @@ class NotificationSystem {
     }
 
     // ==============================================
+    // COOLDOWN Y PREVENCIÓN DE DUPLICADOS
+    // ==============================================
+
+    canPlayNotification() {
+        const now = Date.now();
+        if (this.isPlayingSound) {
+            console.log('🔇 Sonido en reproducción, bloqueando nueva notificación');
+            return false;
+        }
+        if (now - this.lastNotificationTime < this.NOTIFICATION_COOLDOWN) {
+            console.log('🔇 Cooldown activo, bloqueando notificación');
+            return false;
+        }
+        return true;
+    }
+
+    startNotification() {
+        this.isPlayingSound = true;
+        this.lastNotificationTime = Date.now();
+    }
+
+    endNotification() {
+        // Esperar un poco antes de permitir la siguiente notificación
+        setTimeout(() => {
+            this.isPlayingSound = false;
+        }, 500);
+    }
+
+    // ==============================================
     // GENERADORES DE SONIDO
     // ==============================================
 
     playNewOrderSound() {
+        if (!this.canPlayNotification()) return;
+        
+        this.startNotification();
+
         if (!this.audioContext) {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
@@ -102,10 +139,17 @@ class NotificationSystem {
             
             osc.start();
             osc.stop(ctx.currentTime + 0.5);
+            
+            // Marcar fin de notificación
+            this.endNotification();
         }, 450);
     }
 
     playStatusChangeSound() {
+        if (!this.canPlayNotification()) return;
+        
+        this.startNotification();
+
         if (!this.audioContext) {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
@@ -136,6 +180,11 @@ class NotificationSystem {
             osc.start(now + note.time);
             osc.stop(now + note.time + note.duration);
         });
+
+        // Marcar fin de notificación
+        setTimeout(() => {
+            this.endNotification();
+        }, 400);
     }
 
     // ==============================================
@@ -191,53 +240,70 @@ class NotificationSystem {
     }
 
     // ==============================================
-    // DETECTORES DE CAMBIOS
+    // DETECTORES DE CAMBIOS (CORREGIDOS)
     // ==============================================
 
     checkForNewOrders(orders) {
         const currentCount = orders.length;
         
+        // SOLO notificar si hay MÁS pedidos que antes
         if (this.lastOrderCount > 0 && currentCount > this.lastOrderCount) {
             const newOrdersCount = currentCount - this.lastOrderCount;
-            const newOrder = orders[0]; // El pedido más reciente
             
-            // Sonido
-            this.playNewOrderSound();
-            
-            // Notificación del navegador (incluso si está cerrado)
-            this.showBrowserNotification(
-                "🆕 Nuevo Pedido Recibido",
-                `Pedido #${newOrder.id} de ${newOrder.username || 'Cliente'}\nTotal: ${newOrdersCount} nuevo${newOrdersCount > 1 ? 's' : ''} pedido${newOrdersCount > 1 ? 's' : ''}`,
-                "🛎️"
+            // Obtener SOLO los pedidos nuevos (los que no hemos procesado)
+            const newOrders = orders.slice(0, newOrdersCount).filter(order => 
+                !this.processedOrderIds.has(order.id)
             );
             
-            // Notificación en página
-            this.showInPageNotification(
-                "🆕 Nuevo Pedido",
-                `<strong>Pedido #${newOrder.id}</strong> de <strong>${newOrder.username || 'Cliente'}</strong><br>
-                <small>${new Date(newOrder.timestamp).toLocaleTimeString('es-EC')}</small>`,
-                'success'
-            );
+            if (newOrders.length > 0) {
+                console.log(`🆕 Detectados ${newOrders.length} pedidos nuevos reales`);
+                
+                const newOrder = newOrders[0]; // El pedido más reciente
+                
+                // Marcar este pedido como procesado
+                newOrders.forEach(order => this.processedOrderIds.add(order.id));
+                
+                // Sonido (con cooldown)
+                this.playNewOrderSound();
+                
+                // Notificación del navegador
+                this.showBrowserNotification(
+                    "🆕 Nuevo Pedido Recibido",
+                    `Pedido #${newOrder.id} de ${newOrder.username || 'Cliente'}\nTotal: ${newOrders.length} nuevo${newOrders.length > 1 ? 's' : ''} pedido${newOrders.length > 1 ? 's' : ''}`,
+                    "🛎️"
+                );
+                
+                // Notificación en página
+                this.showInPageNotification(
+                    "🆕 Nuevo Pedido",
+                    `<strong>Pedido #${newOrder.id}</strong> de <strong>${newOrder.username || 'Cliente'}</strong><br>
+                    <small>${new Date(newOrder.timestamp).toLocaleTimeString('es-EC')}</small>`,
+                    'success'
+                );
+            }
         }
         
         this.lastOrderCount = currentCount;
     }
 
     checkForStatusChanges(orders) {
+        const statusNames = {
+            'pending': '⏳ Pendiente',
+            'preparing': '🍳 Preparando',
+            'ready': '✅ Listo para recoger',
+            'delivered': '🚀 Entregado'
+        };
+        
+        let changesDetected = false;
+        
         orders.forEach(order => {
             const lastStatus = this.lastOrderStates.get(order.id);
             
+            // SOLO notificar si el estado CAMBIÓ de verdad
             if (lastStatus && lastStatus !== order.status) {
-                // El estado cambió
-                const statusNames = {
-                    'pending': '⏳ Pendiente',
-                    'preparing': '🍳 Preparando',
-                    'ready': '✅ Listo para recoger',
-                    'delivered': '🚀 Entregado'
-                };
+                console.log(`🔔 Estado cambió: Pedido #${order.id} de ${lastStatus} a ${order.status}`);
                 
-                // Sonido
-                this.playStatusChangeSound();
+                changesDetected = true;
                 
                 // Notificación del navegador
                 this.showBrowserNotification(
@@ -255,15 +321,24 @@ class NotificationSystem {
                 );
             }
             
+            // Actualizar el estado guardado
             this.lastOrderStates.set(order.id, order.status);
         });
+        
+        // Sonido SOLO si hubo cambios (con cooldown)
+        if (changesDetected) {
+            this.playStatusChangeSound();
+        }
     }
 
     // Método para inicializar estados sin notificar
     initializeStates(orders) {
+        console.log(`📋 Inicializando sistema con ${orders.length} pedidos`);
         this.lastOrderCount = orders.length;
+        
         orders.forEach(order => {
             this.lastOrderStates.set(order.id, order.status);
+            this.processedOrderIds.add(order.id); // Marcar como procesado
         });
     }
 }

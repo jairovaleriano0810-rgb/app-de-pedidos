@@ -348,6 +348,10 @@
         let products = {};
         let prices = {};
         let isRestaurantOpen = true;
+        let previousOrders = []; // Para rastrear pedidos anteriores
+
+        // Variable global para control de animaciones
+        window.shouldAnimateOrders = false;
 
         // ============================================
         // SISTEMA DE LIMPIEZA DE PEDIDOS
@@ -805,7 +809,7 @@
         }
 
         // ============================================
-        // GESTIÓN DE PEDIDOS CON NOTIFICACIONES
+        // GESTIÓN DE PEDIDOS CON NOTIFICACIONES (CORREGIDO)
         // ============================================
         
         function renderOrders() {
@@ -904,26 +908,42 @@
         }
 
         function updateOrderStatus(orderId, newStatus) {
+            console.log(`📝 Actualizando pedido #${orderId} a estado: ${newStatus}`);
+            
             fetch(`/api/orders/${orderId}`, {
                 method: 'PUT',
                 headers: {'Content-Type':'application/json'},
                 body: JSON.stringify({ status: newStatus })
             })
             .then(r=>r.json())
-            .then(()=>{
-                window.shouldAnimateOrders = true;
+            .then((updatedOrder)=>{
+                console.log(`✅ Pedido #${orderId} actualizado exitosamente`);
                 
-                loadOrdersFromServer();
-                if (USER_ROLE === 'admin') {
-                    loadAdminOrders();
+                // Actualizar inmediatamente en el array local
+                const orderIndex = orders.findIndex(o => o.id === orderId);
+                if (orderIndex !== -1) {
+                    orders[orderIndex].status = newStatus;
+                    console.log(`📋 Estado local actualizado para pedido #${orderId}`);
                 }
+                
+                // Re-renderizar inmediatamente
+                window.shouldAnimateOrders = true;
+                renderOrders();
+                
+                // Cargar del servidor para confirmar
+                setTimeout(() => {
+                    loadOrdersFromServer();
+                    if (USER_ROLE === 'admin') {
+                        loadAdminOrders();
+                    }
+                }, 100);
                 
                 setTimeout(() => {
                     window.shouldAnimateOrders = false;
                 }, 600);
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('❌ Error al actualizar el estado:', error);
                 alert('Error al actualizar el estado');
             });
         }
@@ -932,20 +952,32 @@
             fetch('/api/orders')
             .then(r=>r.json())
             .then(data=>{
+                console.log(`📥 Pedidos recibidos del servidor: ${data.length}`);
+                
+                // ADMIN: Detectar nuevos pedidos
                 if (USER_ROLE === 'admin') {
                     window.notificationSystem.checkForNewOrders(data);
                 }
                 
+                // USUARIO: Detectar cambios de estado
                 if (USER_ROLE === 'user') {
                     window.notificationSystem.checkForStatusChanges(data);
                 }
                 
+                // Actualizar el array global de pedidos
                 orders = data;
+                
+                // Actualizar contador de pedidos
                 document.getElementById('orderCount').textContent = orders.length;
+                
+                // Re-renderizar pedidos (esto actualiza la UI)
                 renderOrders();
+                
+                // Guardar copia para la próxima comparación
+                previousOrders = JSON.parse(JSON.stringify(data));
             })
             .catch(error => {
-                console.error('Error cargando pedidos:', error);
+                console.error('❌ Error cargando pedidos:', error);
             });
         }
 
@@ -953,14 +985,14 @@
             const adminOrders = document.getElementById('adminOrders');
             
             if (!adminOrders) {
-                console.log('Elemento adminOrders no encontrado');
+                console.log('⚠️ Elemento adminOrders no encontrado');
                 return;
             }
             
             fetch('/api/orders')
             .then(r=>r.json())
             .then(data=>{
-                console.log('Pedidos globales actualizados:', data.length);
+                console.log(`📥 Pedidos globales actualizados: ${data.length}`);
                 
                 if (USER_ROLE === 'admin') {
                     window.notificationSystem.checkForNewOrders(data);
@@ -1051,7 +1083,7 @@
                 }).join('');
             })
             .catch(error => {
-                console.error('Error cargando pedidos globales:', error);
+                console.error('❌ Error cargando pedidos globales:', error);
                 adminOrders.innerHTML = '<p style="color:red; text-align: center; padding: 20px;">Error cargando pedidos. Reintentando...</p>';
             });
         }
@@ -1212,26 +1244,29 @@
         updateCart();
         loadRestaurantStatus();
         
+        // Inicializar estados sin notificar
         fetch('/api/orders')
             .then(r => r.json())
             .then(data => {
+                console.log('🎬 Inicializando sistema con', data.length, 'pedidos');
                 window.notificationSystem.initializeStates(data);
                 orders = data;
                 document.getElementById('orderCount').textContent = orders.length;
                 renderOrders();
             });
 
+        // Intervalos de actualización
         setInterval(loadOrdersFromServer, 3000);
         setInterval(loadRestaurantStatus, 10000);
         setInterval(loadProducts, 10000);
         
-        // Verificar bandera de limpieza cada 1 SEGUNDO (solo usuarios) - MUY FRECUENTE
+        // Verificar bandera de limpieza cada 1 SEGUNDO (solo usuarios)
         if (USER_ROLE === 'user') {
             setInterval(checkCleanFlag, 1000);
-            // También verificar inmediatamente
             checkCleanFlag();
         }
         
+        // Actualización de pedidos admin
         if (USER_ROLE === 'admin') {
             setInterval(() => {
                 const adminSection = document.getElementById('adminSection');
