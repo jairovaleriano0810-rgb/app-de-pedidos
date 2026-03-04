@@ -460,6 +460,70 @@
             transition: all 0.3s;
         }
         .btn-delete-cat:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(255, 51, 102, 0.6); }
+
+
+
+        /* ============================================================
+        FIX MÓVIL — Agregar dentro del <style> en index.html
+        Pega esto ANTES del cierre </style>
+        ============================================================ */
+
+        /* En dispositivos que NO soportan hover real (táctiles),
+        desactivar todos los efectos hover de las tarjetas */
+        @media (hover: none) {
+            .menu-item:hover {
+                transform: none !important;
+                border-color: rgba(255, 107, 53, 0.15) !important;
+                box-shadow: none !important;
+                background: rgba(15, 17, 28, 0.9) !important;
+            }
+
+            .menu-item:hover::before {
+                width: 50px !important;
+                height: 50px !important;
+                opacity: 0.6 !important;
+                box-shadow: none !important;
+            }
+
+            .menu-item:hover::after {
+                width: 50px !important;
+                height: 50px !important;
+                opacity: 0.4 !important;
+            }
+
+            /* Asegurar que los botones de cantidad siempre sean tocables */
+            .quantity-control {
+                position: relative;
+                z-index: 10;
+                pointer-events: auto !important;
+            }
+
+            .quantity-control button {
+                position: relative;
+                z-index: 10;
+                pointer-events: auto !important;
+                /* Área de toque más grande en móvil */
+                min-width: 44px;
+                min-height: 44px;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: rgba(255, 107, 53, 0.2);
+            }
+
+            /* Evitar que el contenedor capture los toques */
+            .menu-item {
+                pointer-events: auto;
+                touch-action: auto;
+                -webkit-user-select: none;
+                user-select: none;
+                cursor: default;
+            }
+        }
+
+        /* Fix adicional: evitar delay de 300ms en botones táctiles */
+        .quantity-control button {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(255, 107, 53, 0.2);
+        }
     </style>
 </head>
 
