@@ -1,0 +1,64 @@
+function submitOrder() {
+            if (!isRestaurantOpen && USER_ROLE !== 'admin') {
+                alert('⚠️ Lo sentimos, el restaurante está cerrado en este momento.');
+                return;
+            }
+
+            const items = Object.entries(cart)
+                .filter(([_, qty]) => qty > 0)
+                .map(([k, v]) => ({
+                    name: k,
+                    quantity: v
+                }));
+
+            if (items.length === 0) return;
+
+            fetch('/api/orders', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ items })
+            })
+            .then(r => {
+                if (!r.ok) {
+                    return r.json().then(err => { throw new Error(err.error || 'Error al enviar el pedido'); });
+                }
+                return r.json();
+            })
+            .then(order => {
+                alert("¡Pedido enviado con éxito!");
+
+                Object.keys(cart).forEach(k=>{
+                    cart[k]=0;
+                    const qtyElement = document.getElementById(`qty-${k}`);
+                    if (qtyElement) {
+                        qtyElement.textContent = 0;
+                    }
+                });
+                updateCart();
+
+                // ✅ Actualiza stock inmediatamente
+                loadStock().then(() => loadProducts());
+
+                // ✅ Esto dispara notificación, sonido y actualiza pedidos
+                loadOrdersFromServer();
+
+                // ✅ Notificación visual y sonido en la página para el admin
+                if (USER_ROLE !== 'admin') {
+                    window.notificationSystem.playNewOrderSound();
+                    window.notificationSystem.showInPageNotification(
+                        "🆕 Pedido Enviado",
+                        `<strong>Tu pedido ha sido enviado correctamente</strong><br>
+                        <small>Espera mientras lo preparamos 🍽️</small>`,
+                        'success'
+                    );
+                }
+                
+                if (USER_ROLE === 'admin') {
+                    loadAdminOrders();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message || 'Error al enviar el pedido');
+            });
+        }

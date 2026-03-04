@@ -1,67 +1,154 @@
-/* ==============================================
-   ESTILOS PARA NOTIFICACIONES EN PÁGINA
-============================================== */
+/* ============================================================
+   NOTIFICATIONS.CSS — FUTURISTIC EDITION
+   Sabor Ecuatoriano | Cyber-Neon Notifications
+   ============================================================ */
 
+/* ============================================================
+   IN-PAGE NOTIFICATION
+   ============================================================ */
 .in-page-notification {
     position: fixed;
     top: 100px;
-    right: -400px;
+    right: -420px;
     width: 380px;
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    background: rgba(10, 12, 20, 0.97);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 107, 53, 0.3);
+    box-shadow:
+        0 0 30px rgba(255, 107, 53, 0.15),
+        0 15px 50px rgba(0, 0, 0, 0.5);
     overflow: hidden;
     z-index: 10001;
     transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    border-left: 5px solid #FF6B35;
+    border-left: 3px solid #FF6B35;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* Top scan line */
+.in-page-notification::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #FF6B35, transparent);
+    box-shadow: 0 0 15px rgba(255, 107, 53, 0.8);
+    animation: notifScan 2s ease-in-out infinite;
+}
+
+@keyframes notifScan {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; box-shadow: 0 0 25px rgba(255, 107, 53, 1); }
 }
 
 .in-page-notification.show {
     right: 20px;
 }
 
+/* Variant: Success */
 .in-page-notification.success {
-    border-left-color: #4CAF50;
+    border-left-color: #00ff99;
+    border-color: rgba(0, 255, 153, 0.3);
+    box-shadow:
+        0 0 30px rgba(0, 255, 153, 0.12),
+        0 15px 50px rgba(0, 0, 0, 0.5);
+}
+
+.in-page-notification.success::before {
+    background: linear-gradient(90deg, transparent, #00ff99, transparent);
+    box-shadow: 0 0 15px rgba(0, 255, 153, 0.8);
 }
 
 .in-page-notification.success .notification-header {
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    background: linear-gradient(135deg, rgba(0, 255, 153, 0.12) 0%, rgba(0, 204, 102, 0.08) 100%);
+    border-bottom-color: rgba(0, 255, 153, 0.2);
 }
 
+.in-page-notification.success .notification-header strong {
+    color: #00ff99;
+    text-shadow: 0 0 15px rgba(0, 255, 153, 0.6);
+}
+
+/* Variant: Info */
 .in-page-notification.info {
-    border-left-color: #2196F3;
+    border-left-color: #00e5ff;
+    border-color: rgba(0, 229, 255, 0.3);
+    box-shadow:
+        0 0 30px rgba(0, 229, 255, 0.12),
+        0 15px 50px rgba(0, 0, 0, 0.5);
+}
+
+.in-page-notification.info::before {
+    background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.8);
 }
 
 .in-page-notification.info .notification-header {
-    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.1) 0%, rgba(0, 114, 255, 0.06) 100%);
+    border-bottom-color: rgba(0, 229, 255, 0.2);
 }
 
+.in-page-notification.info .notification-header strong {
+    color: #00e5ff;
+    text-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
+}
+
+/* Variant: Warning */
 .in-page-notification.warning {
-    border-left-color: #FF9800;
+    border-left-color: #FFD700;
+    border-color: rgba(255, 215, 0, 0.3);
+    box-shadow:
+        0 0 30px rgba(255, 215, 0, 0.1),
+        0 15px 50px rgba(0, 0, 0, 0.5);
+}
+
+.in-page-notification.warning::before {
+    background: linear-gradient(90deg, transparent, #FFD700, transparent);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
 }
 
 .in-page-notification.warning .notification-header {
-    background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 152, 0, 0.06) 100%);
+    border-bottom-color: rgba(255, 215, 0, 0.2);
 }
 
+.in-page-notification.warning .notification-header strong {
+    color: #FFD700;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+}
+
+/* ============================================================
+   NOTIFICATION HEADER
+   ============================================================ */
 .notification-header {
-    background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(247, 147, 30, 0.06) 100%);
+    border-bottom: 1px solid rgba(255, 107, 53, 0.15);
     color: white;
-    padding: 15px 20px;
+    padding: 14px 18px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-family: 'Righteous', cursive;
-    font-size: 1.1em;
+    font-family: 'Orbitron', 'Work Sans', sans-serif;
+    font-size: 0.95em;
+    letter-spacing: 1px;
 }
 
+.notification-header strong {
+    color: #FF6B35;
+    text-shadow: 0 0 15px rgba(255, 107, 53, 0.6);
+    font-weight: 700;
+}
+
+/* ============================================================
+   CLOSE BUTTON
+   ============================================================ */
 .close-notification {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    font-size: 1.5em;
-    width: 30px;
-    height: 30px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.3em;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -69,136 +156,203 @@
     align-items: center;
     justify-content: center;
     line-height: 1;
+    flex-shrink: 0;
 }
 
 .close-notification:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 51, 102, 0.2);
+    border-color: rgba(255, 51, 102, 0.4);
+    color: #ff3366;
     transform: rotate(90deg);
+    box-shadow: 0 0 10px rgba(255, 51, 102, 0.3);
 }
 
+/* ============================================================
+   NOTIFICATION BODY
+   ============================================================ */
 .notification-body {
-    padding: 20px;
-    color: #333;
-    font-size: 0.95em;
+    padding: 18px;
+    color: rgba(240, 236, 232, 0.85);
+    font-size: 0.9em;
     line-height: 1.6;
+    font-family: 'Work Sans', sans-serif;
 }
 
 .notification-body strong {
     color: #FF6B35;
+    font-weight: 700;
 }
 
 .notification-body small {
-    color: #999;
+    color: rgba(138, 138, 154, 0.7);
     font-size: 0.85em;
+    display: block;
+    margin-top: 4px;
 }
 
-/* Animación de pulso para nuevas notificaciones */
+/* ============================================================
+   SHOW ANIMATION — NEON PULSE
+   ============================================================ */
 @keyframes notificationPulse {
     0%, 100% {
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        box-shadow:
+            0 0 30px rgba(255, 107, 53, 0.15),
+            0 15px 50px rgba(0, 0, 0, 0.5);
     }
     50% {
-        box-shadow: 0 10px 40px rgba(255, 107, 53, 0.6);
+        box-shadow:
+            0 0 50px rgba(255, 107, 53, 0.4),
+            0 0 80px rgba(255, 107, 53, 0.15),
+            0 15px 50px rgba(0, 0, 0, 0.5);
     }
 }
 
 .in-page-notification.show {
-    animation: notificationPulse 1s ease-in-out 2;
+    animation: notificationPulse 1.2s ease-in-out 2;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .in-page-notification {
-        width: calc(100% - 40px);
-        right: -100%;
-    }
-    
-    .in-page-notification.show {
-        right: 20px;
-    }
+.in-page-notification.success.show {
+    animation: notificationPulseGreen 1.2s ease-in-out 2;
 }
 
-/* ==============================================
-   BOTÓN PARA ACTIVAR NOTIFICACIONES
-============================================== */
+.in-page-notification.info.show {
+    animation: notificationPulseCyan 1.2s ease-in-out 2;
+}
 
+.in-page-notification.warning.show {
+    animation: notificationPulseYellow 1.2s ease-in-out 2;
+}
+
+@keyframes notificationPulseGreen {
+    0%, 100% { box-shadow: 0 0 30px rgba(0, 255, 153, 0.12), 0 15px 50px rgba(0, 0, 0, 0.5); }
+    50% { box-shadow: 0 0 50px rgba(0, 255, 153, 0.4), 0 0 80px rgba(0, 255, 153, 0.1), 0 15px 50px rgba(0, 0, 0, 0.5); }
+}
+
+@keyframes notificationPulseCyan {
+    0%, 100% { box-shadow: 0 0 30px rgba(0, 229, 255, 0.12), 0 15px 50px rgba(0, 0, 0, 0.5); }
+    50% { box-shadow: 0 0 50px rgba(0, 229, 255, 0.4), 0 0 80px rgba(0, 229, 255, 0.1), 0 15px 50px rgba(0, 0, 0, 0.5); }
+}
+
+@keyframes notificationPulseYellow {
+    0%, 100% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.1), 0 15px 50px rgba(0, 0, 0, 0.5); }
+    50% { box-shadow: 0 0 50px rgba(255, 215, 0, 0.35), 0 0 80px rgba(255, 215, 0, 0.08), 0 15px 50px rgba(0, 0, 0, 0.5); }
+}
+
+/* ============================================================
+   ENABLE NOTIFICATIONS BUTTON
+   ============================================================ */
 .enable-notifications-btn {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-    color: white;
-    padding: 15px 25px;
+    background: linear-gradient(135deg, #00ff99 0%, #00cc66 100%);
+    color: #000;
+    padding: 14px 22px;
     border-radius: 50px;
     border: none;
-    font-weight: 700;
-    font-size: 1em;
+    font-weight: 800;
+    font-size: 0.9em;
     cursor: pointer;
-    box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 0 20px rgba(0, 255, 153, 0.5), 0 0 40px rgba(0, 255, 153, 0.2);
     transition: all 0.3s ease;
     z-index: 9999;
     display: flex;
     align-items: center;
     gap: 10px;
-    animation: bounce 2s infinite;
+    animation: bounceBtn 2s infinite;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .enable-notifications-btn:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6);
+    box-shadow: 0 0 35px rgba(0, 255, 153, 0.7), 0 0 60px rgba(0, 255, 153, 0.3);
 }
 
-.enable-notifications-btn.hidden {
-    display: none;
+.enable-notifications-btn.hidden { display: none; }
+
+@keyframes bounceBtn {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-10px); }
+    60% { transform: translateY(-5px); }
 }
 
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {
-        transform: translateY(0);
-    }
-    40% {
-        transform: translateY(-10px);
-    }
-    60% {
-        transform: translateY(-5px);
-    }
-}
-
-/* Indicador de notificaciones activas */
+/* ============================================================
+   NOTIFICATIONS INDICATOR
+   ============================================================ */
 .notifications-indicator {
     position: fixed;
     top: 90px;
     left: 20px;
-    background: white;
-    padding: 10px 15px;
+    background: rgba(10, 12, 20, 0.92);
+    padding: 8px 14px;
     border-radius: 25px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    font-size: 0.85em;
-    font-weight: 600;
+    border: 1px solid rgba(255, 107, 53, 0.2);
+    font-size: 0.78em;
+    font-weight: 700;
     z-index: 1001;
     display: flex;
     align-items: center;
     gap: 8px;
     animation: slideInLeft 0.6s ease-out;
+    backdrop-filter: blur(15px);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-100px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
 .notifications-indicator.active {
-    color: #4CAF50;
+    color: #00ff99;
+    border-color: rgba(0, 255, 153, 0.25);
+    box-shadow: 0 0 10px rgba(0, 255, 153, 0.08);
 }
 
 .notifications-indicator.inactive {
-    color: #999;
+    color: rgba(138, 138, 154, 0.6);
+    border-color: rgba(138, 138, 154, 0.1);
 }
 
 .notification-dot {
-    width: 8px;
-    height: 8px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
-    background: #4CAF50;
-    animation: pulse 2s ease-in-out infinite;
+    background: #00ff99;
+    box-shadow: 0 0 8px rgba(0, 255, 153, 0.8);
+    animation: dotPulse 2s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.75); }
 }
 
 .notification-dot.inactive {
-    background: #999;
+    background: rgba(138, 138, 154, 0.4);
+    box-shadow: none;
     animation: none;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+    .in-page-notification {
+        width: calc(100% - 40px);
+        right: -100%;
+    }
+
+    .in-page-notification.show {
+        right: 20px;
+    }
+
+    .notifications-indicator {
+        top: 70px;
+        left: 10px;
+        font-size: 0.7em;
+        padding: 6px 10px;
+    }
 }

@@ -7,172 +7,362 @@
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
+        /* ============================================================
+           LOGIN.HTML STYLES — FUTURISTIC EDITION
+           Sabor Ecuatoriano | Cyber-Neon Theme
+           ============================================================ */
+
+        /* ============================================================
+           LOGIN CONTAINER
+           ============================================================ */
         .login-container {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            position: relative;
+            z-index: 1;
         }
 
+        /* ============================================================
+           LOGIN BOX
+           ============================================================ */
         .login-box {
-            background: white;
-            border-radius: 20px;
+            background: rgba(8, 10, 18, 0.96);
+            border-radius: 22px;
             padding: 40px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-            max-width: 450px;
+            border: 1px solid rgba(255, 107, 53, 0.25);
+            box-shadow:
+                0 0 60px rgba(255, 107, 53, 0.08),
+                0 0 120px rgba(255, 107, 53, 0.03),
+                0 25px 80px rgba(0, 0, 0, 0.6);
+            max-width: 460px;
             width: 100%;
-            animation: slideDown 0.6s ease-out;
+            animation: slideDown 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
         }
 
+        /* Top neon scan line */
+        .login-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #FF6B35, #F7931E, #00e5ff, transparent);
+            box-shadow:
+                0 0 20px rgba(255, 107, 53, 0.8),
+                0 0 40px rgba(255, 107, 53, 0.3);
+            animation: loginTopScan 3s ease-in-out infinite;
+        }
+
+        /* Background grid */
+        .login-box::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 107, 53, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 107, 53, 0.025) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            border-radius: inherit;
+        }
+
+        @keyframes loginTopScan {
+            0%, 100% { opacity: 0.6; }
+            50% {
+                opacity: 1;
+                box-shadow: 0 0 30px rgba(255, 107, 53, 1), 0 0 60px rgba(255, 107, 53, 0.4);
+            }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-40px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ============================================================
+           LOGIN HEADER
+           ============================================================ */
         .login-header {
             text-align: center;
             margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
         }
 
         .login-header h1 {
-            font-family: 'Righteous', cursive;
-            font-size: 2.5em;
-            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2em;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow:
+                0 0 20px rgba(255, 107, 53, 0.9),
+                0 0 40px rgba(255, 107, 53, 0.5),
+                0 0 80px rgba(255, 107, 53, 0.2);
             margin-bottom: 10px;
+            letter-spacing: 2px;
         }
 
         .login-header p {
-            color: #666;
-            font-size: 1.1em;
+            color: rgba(138, 138, 154, 0.8);
+            font-size: 0.95em;
+            letter-spacing: 1px;
         }
 
+        /* ============================================================
+           LOGIN BOX H2
+           ============================================================ */
         .login-box h2 {
-            font-family: 'Righteous', cursive;
-            font-size: 1.8em;
-            color: var(--dark);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4em;
+            color: #ffffff;
             text-align: center;
             margin-bottom: 25px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 1;
+            padding-bottom: 15px;
         }
 
+        .login-box h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 60px; height: 1px;
+            background: linear-gradient(90deg, transparent, #FF6B35, transparent);
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.6);
+        }
+
+        /* ============================================================
+           FORM GROUPS
+           ============================================================ */
         .form-group {
             margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
 
         .form-group label {
             display: block;
             font-weight: 700;
             margin-bottom: 8px;
-            color: var(--dark);
+            color: rgba(200, 196, 210, 0.7);
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
         }
 
+        /* ============================================================
+           INPUTS & SELECTS
+           ============================================================ */
         .login-box form select,
         .login-box form input {
             width: 100%;
-            padding: 15px;
+            padding: 14px 16px;
             border-radius: 12px;
-            border: 2px solid #eee;
+            border: 1px solid rgba(255, 107, 53, 0.25);
+            background: rgba(255, 255, 255, 0.04);
+            color: #f0ece8;
             font-size: 1em;
             font-family: 'Work Sans', sans-serif;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        }
+
+        .login-box form select {
+            background: rgba(8, 10, 18, 0.9);
+            cursor: pointer;
+        }
+
+        .login-box form select option {
+            background: #0a0c14;
+            color: #f0ece8;
+        }
+
+        .login-box form input::placeholder {
+            color: rgba(138, 138, 154, 0.45);
         }
 
         .login-box form select:focus,
         .login-box form input:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+            border-color: #FF6B35;
+            box-shadow:
+                0 0 0 3px rgba(255, 107, 53, 0.15),
+                0 0 20px rgba(255, 107, 53, 0.2);
+            background: rgba(255, 107, 53, 0.04);
         }
 
-        .login-box form button {
+        /* ============================================================
+           SUBMIT BUTTON
+           ============================================================ */
+        .login-box form button[type="submit"] {
             width: 100%;
-            padding: 18px;
+            padding: 16px;
             border: none;
             border-radius: 12px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
             color: white;
-            font-family: 'Righteous', cursive;
-            font-size: 1.2em;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1em;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
             margin-top: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
         }
 
-        .login-box form button:hover {
+        .login-box form button[type="submit"]::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s;
+        }
+
+        .login-box form button[type="submit"]:hover::before { left: 100%; }
+
+        .login-box form button[type="submit"]:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(255, 107, 53, 0.5);
+            box-shadow:
+                0 0 35px rgba(255, 107, 53, 0.65),
+                0 0 70px rgba(255, 107, 53, 0.2),
+                0 10px 25px rgba(0, 0, 0, 0.3);
         }
 
-        .login-box form button:active {
+        .login-box form button[type="submit"]:active {
             transform: translateY(0);
+            box-shadow: 0 0 15px rgba(255, 107, 53, 0.4);
         }
 
+        /* ============================================================
+           ERROR MESSAGE
+           ============================================================ */
         .error-message {
-            background: #ffe6e6;
-            color: #d32f2f;
-            padding: 15px;
+            background: rgba(255, 51, 102, 0.08);
+            color: #ff6688;
+            padding: 14px 18px;
             border-radius: 10px;
             margin-bottom: 20px;
-            border-left: 4px solid #d32f2f;
+            border: 1px solid rgba(255, 51, 102, 0.3);
+            border-left: 3px solid #ff3366;
             font-weight: 600;
             text-align: center;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+            box-shadow: 0 0 15px rgba(255, 51, 102, 0.08);
+            position: relative;
+            z-index: 1;
         }
 
+        /* ============================================================
+           INFO BOX
+           ============================================================ */
         .info-box {
-            background: var(--cream);
-            padding: 15px;
-            border-radius: 10px;
+            background: rgba(255, 107, 53, 0.05);
+            border: 1px solid rgba(255, 107, 53, 0.15);
+            padding: 15px 18px;
+            border-radius: 12px;
             margin-top: 20px;
             text-align: center;
-            font-size: 0.9em;
-            color: #666;
+            font-size: 0.88em;
+            color: rgba(138, 138, 154, 0.75);
+            line-height: 1.7;
+            position: relative;
+            z-index: 1;
         }
 
         .info-box strong {
-            color: var(--primary);
+            color: #FF6B35;
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85em;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(255, 107, 53, 0.4);
         }
 
+        /* ============================================================
+           FIELD ANIMATIONS
+           ============================================================ */
         #userFields, #adminFields {
             animation: fadeIn 0.3s ease-in;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Botón de contacto al creador */
+        /* ============================================================
+           CREATOR CONTACT BUTTON
+           ============================================================ */
         .creator-contact-btn {
             width: 100%;
-            padding: 15px;
+            padding: 14px;
             margin-top: 15px;
-            border: 2px solid var(--primary);
+            border: 1px solid rgba(255, 107, 53, 0.35);
             border-radius: 12px;
-            background: white;
-            color: var(--primary);
+            background: rgba(255, 107, 53, 0.05);
+            color: #FF6B35;
             font-family: 'Work Sans', sans-serif;
             font-weight: 700;
-            font-size: 1em;
+            font-size: 0.9em;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
         }
+
+        .creator-contact-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,107,53,0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .creator-contact-btn:hover::before { left: 100%; }
 
         .creator-contact-btn:hover {
-            background: var(--primary);
-            color: white;
+            background: rgba(255, 107, 53, 0.12);
+            border-color: rgba(255, 107, 53, 0.6);
+            color: #fff;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.25);
         }
 
-        /* Modal de contacto */
+        /* ============================================================
+           CREATOR MODAL
+           ============================================================ */
         .creator-modal {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             z-index: 10000;
             align-items: center;
             justify-content: center;
@@ -184,137 +374,185 @@
         }
 
         .creator-modal-content {
-            background: white;
-            border-radius: 20px;
+            background: rgba(8, 10, 18, 0.98);
+            border-radius: 22px;
             padding: 0;
-            max-width: 450px;
+            max-width: 460px;
             width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            animation: popup 0.4s ease;
+            border: 1px solid rgba(255, 107, 53, 0.25);
+            box-shadow:
+                0 0 60px rgba(255, 107, 53, 0.1),
+                0 25px 80px rgba(0, 0, 0, 0.6);
+            animation: popupCyber 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             position: relative;
             overflow: hidden;
         }
 
-        @keyframes popup {
-            from {
-                transform: scale(0.8);
-                opacity: 0;
-            }
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
+        @keyframes popupCyber {
+            from { transform: scale(0.75) translateY(20px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
         }
 
+        /* ============================================================
+           CLOSE MODAL BUTTON
+           ============================================================ */
         .close-modal {
             position: absolute;
             top: 15px;
             right: 15px;
-            background: rgba(0, 0, 0, 0.1);
-            border: none;
-            color: white;
-            font-size: 2em;
-            width: 40px;
-            height: 40px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.5em;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1;
+            z-index: 10;
+            line-height: 1;
         }
 
         .close-modal:hover {
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(255, 51, 102, 0.2);
+            border-color: rgba(255, 51, 102, 0.4);
+            color: #ff3366;
             transform: rotate(90deg);
+            box-shadow: 0 0 12px rgba(255, 51, 102, 0.3);
         }
 
+        /* ============================================================
+           CREATOR HEADER (dentro del modal)
+           ============================================================ */
         .creator-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            padding: 40px 30px 30px;
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(247, 147, 30, 0.08) 100%);
+            border-bottom: 1px solid rgba(255, 107, 53, 0.2);
+            padding: 40px 30px 28px;
             text-align: center;
             color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Neon top line */
+        .creator-header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #FF6B35, #F7931E, transparent);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.8);
+            animation: loginTopScan 2.5s ease-in-out infinite;
         }
 
         .creator-icon {
             font-size: 4em;
             margin-bottom: 15px;
-            animation: bounce 2s infinite;
+            display: block;
+            animation: creatorFloat 2.5s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(255, 107, 53, 0.6));
         }
 
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
+        @keyframes creatorFloat {
+            0%, 100% {
                 transform: translateY(0);
+                filter: drop-shadow(0 0 20px rgba(255, 107, 53, 0.5));
             }
-            40% {
-                transform: translateY(-10px);
-            }
-            60% {
-                transform: translateY(-5px);
+            50% {
+                transform: translateY(-8px);
+                filter: drop-shadow(0 0 35px rgba(255, 107, 53, 0.9));
             }
         }
 
         .creator-header h2 {
             margin: 0;
-            font-family: 'Righteous', cursive;
-            font-size: 1.8em;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow:
+                0 0 20px rgba(255, 107, 53, 0.6),
+                0 0 40px rgba(255, 107, 53, 0.2);
+            letter-spacing: 2px;
         }
 
+        /* ============================================================
+           CREATOR INFO
+           ============================================================ */
         .creator-info {
-            padding: 30px;
+            padding: 28px 30px;
         }
 
         .creator-name,
         .creator-phone {
-            background: var(--cream);
-            padding: 15px 20px;
+            background: rgba(255, 107, 53, 0.05);
+            border: 1px solid rgba(255, 107, 53, 0.15);
+            padding: 14px 18px;
             border-radius: 12px;
-            margin-bottom: 15px;
+            margin-bottom: 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .creator-name:hover,
+        .creator-phone:hover {
+            border-color: rgba(255, 107, 53, 0.35);
+            background: rgba(255, 107, 53, 0.08);
         }
 
         .creator-name .label,
         .creator-phone .label {
             font-weight: 700;
-            color: var(--dark);
-            font-size: 1em;
+            color: rgba(200, 196, 210, 0.65);
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .creator-name .value,
         .creator-phone .value {
-            font-weight: 600;
-            color: var(--primary);
-            font-size: 1.1em;
+            font-weight: 700;
+            color: #FF6B35;
+            font-size: 1em;
+            text-shadow: 0 0 10px rgba(255, 107, 53, 0.4);
+            letter-spacing: 0.5px;
         }
 
         .copy-phone-btn {
-            background: var(--primary);
+            background: linear-gradient(135deg, #FF6B35, #F7931E);
             border: none;
             color: white;
             border-radius: 8px;
-            padding: 8px 12px;
+            padding: 7px 11px;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 1.2em;
+            font-size: 1.1em;
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
+            flex-shrink: 0;
         }
 
         .copy-phone-btn:hover {
-            background: var(--secondary);
             transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.6);
         }
 
         .creator-description {
             text-align: center;
-            color: #666;
-            margin: 20px 0;
-            line-height: 1.6;
-            font-size: 0.95em;
+            color: rgba(138, 138, 154, 0.75);
+            margin: 18px 0;
+            line-height: 1.7;
+            font-size: 0.9em;
         }
 
+        /* ============================================================
+           WHATSAPP BUTTON
+           ============================================================ */
         .whatsapp-btn {
             display: flex;
             align-items: center;
@@ -322,30 +560,56 @@
             gap: 10px;
             width: 100%;
             padding: 15px;
-            background: #25D366;
+            background: linear-gradient(135deg, #25D366 0%, #1aab55 100%);
             color: white;
             border-radius: 12px;
             text-decoration: none;
             font-weight: 700;
-            font-size: 1.1em;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(37, 211, 102, 0.3);
+            font-size: 1em;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 20px rgba(37, 211, 102, 0.3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
         }
+
+        .whatsapp-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s;
+        }
+
+        .whatsapp-btn:hover::before { left: 100%; }
 
         .whatsapp-btn:hover {
-            background: #20BA5A;
             transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(37, 211, 102, 0.5);
+            box-shadow:
+                0 0 35px rgba(37, 211, 102, 0.55),
+                0 10px 25px rgba(0, 0, 0, 0.3);
         }
 
-        /* Responsive */
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
         @media (max-width: 768px) {
+            .login-box {
+                padding: 30px 22px;
+            }
+
+            .login-header h1 {
+                font-size: 1.7em;
+            }
+
             .creator-modal-content {
-                margin: 20px;
+                margin: 15px;
             }
 
             .creator-header {
-                padding: 30px 20px 20px;
+                padding: 30px 20px 22px;
             }
 
             .creator-info {
@@ -356,7 +620,7 @@
             .creator-phone {
                 flex-direction: column;
                 text-align: center;
-                gap: 5px;
+                gap: 6px;
             }
         }
     </style>
