@@ -1213,6 +1213,7 @@
         // ============================================
         // INICIALIZACIÓN
         // ============================================
+        // Carga inicial de datos
         loadCategories().then(() => loadStock().then(() => loadProducts()));
         updateCart();
         loadRestaurantStatus();
@@ -1226,14 +1227,18 @@
             renderOrders();
         });
 
-        if (USER_ROLE === 'user') {
-            setInterval(checkCleanFlag, 2000);
-            checkCleanFlag();
-        }
+    if (USER_ROLE === 'user') {
+        setInterval(checkCleanFlag, 2000);
+        checkCleanFlag();
+    }
+
 
         // ============================================
         // INTERVALOS INTELIGENTES ANTI-CONGELAMIENTO
+        // ✅ CORREGIDO: Ahora detecta cuando el intervalo
+        //    se congela en iOS/Android y se recupera solo
         // ============================================
+
         let lastTickTime = Date.now();
         let tickInterval = null;
 
@@ -1242,12 +1247,29 @@
             loadOrdersFromServer();
             if (USER_ROLE === 'admin') {
                 const adminSection = document.getElementById('adminSection');
-                if (adminSection && adminSection.classList.contains('active')) loadAdminOrders();
+                if (adminSection && adminSection.classList.contains('active')) {
+                    loadAdminOrders();
+                }
             }
         }
 
-        // Un solo intervalo de 3 segundos para pedidos
+        // Intervalo principal de 3 segundos
         tickInterval = setInterval(smartTick, 3000);
+
+        // ✅ NUEVO: Watchdog — detecta si el intervalo se congeló en iOS Safari
+        // iOS throttlea los setInterval cuando la pantalla se bloquea o cambia de app.
+        // Este watchdog corre cada 5s y si detecta que pasaron más de 8s sin un tick,
+        // reinicia el intervalo automáticamente.
+        setInterval(() => {
+            const elapsed = Date.now() - lastTickTime;
+            if (elapsed > 8000) {
+                console.log('⚡ Intervalo congelado detectado, reiniciando...');
+                clearInterval(tickInterval);
+                lastTickTime = Date.now();
+                tickInterval = setInterval(smartTick, 3000);
+                loadOrdersFromServer(); // Cargar inmediatamente
+            }
+        }, 5000);
 
         // Estado del restaurante cada 10 segundos
         setInterval(loadRestaurantStatus, 10000);
@@ -1255,28 +1277,41 @@
         // Productos y stock cada 10 segundos
         setInterval(() => loadStock().then(() => loadProducts()), 10000);
 
-        // Al volver a la pestaña o desbloquear el móvil → actualizar INMEDIATAMENTE
+        // ✅ CORREGIDO: Al volver a la pestaña o desbloquear el móvil → actualizar INMEDIATAMENTE
+        // También reactiva el AudioContext si estaba suspendido (iOS lo suspende en background)
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
                 loadOrdersFromServer();
                 loadRestaurantStatus();
                 loadStock().then(() => loadProducts());
+
                 // Reiniciar el intervalo limpio
                 clearInterval(tickInterval);
                 lastTickTime = Date.now();
                 tickInterval = setInterval(smartTick, 3000);
+
+                // ✅ NUEVO: Reactivar audio si iOS lo suspendió mientras estaba en background
+                if (window.notificationSystem?.audioContext?.state === 'suspended') {
+                    window.notificationSystem.audioContext.resume()
+                        .then(() => console.log('🔊 AudioContext reactivado'))
+                        .catch(err => console.warn('⚠️ No se pudo reactivar audio:', err));
+                }
             }
         });
 
         // Al recuperar foco (volver desde otra app)
-        window.addEventListener('focus', () => loadOrdersFromServer());
-
+        window.addEventListener('focus', () => {
+            loadOrdersFromServer();
+            // ✅ NUEVO: También reactivar audio al volver de otra app
+            if (window.notificationSystem?.audioContext?.state === 'suspended') {
+                window.notificationSystem.audioContext.resume();
+            }
+        });
         // Al recuperar internet
         window.addEventListener('online', () => {
             loadOrdersFromServer();
             loadRestaurantStatus();
         });
-
         console.log('✅ Sistema inicializado correctamente');
     </script>
 </body>
