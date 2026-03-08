@@ -917,19 +917,39 @@
         // ============================================
         // PRODUCTOS
         // ============================================
-        function loadProducts() {
-            fetch('/api/products')
-            .then(r => r.json())
-            .then(data => {
+        async function loadProducts(retries = 5) {
+            try {
+                const response = await fetch('/api/products', { cache: "no-store" });
+
+                if (!response.ok) throw new Error("Error del servidor");
+
+                const data = await response.json();
+
                 products = data;
                 prices = {};
+
                 for (let cat in products) {
-                    products[cat].forEach(p => { prices[p.id] = p.price; });
+                    products[cat].forEach(p => {
+                        prices[p.id] = p.price;
+                    });
                 }
+
                 renderMenu();
+
                 if (USER_ROLE === 'admin') renderProductsList();
-            })
-            .catch(error => console.error('Error cargando productos:', error));
+
+            } catch (error) {
+
+                console.warn("⚠️ Error cargando productos, reintentando...", error);
+
+                if (retries > 0) {
+                    setTimeout(() => {
+                        loadProducts(retries - 1);
+                    }, 3000);
+                } else {
+                    alert("❌ No se pudieron cargar los productos. Recarga la página.");
+                }
+            }
         }
         function renderMenu() {
             const menuContainer = document.getElementById('menuContainer');
@@ -1213,10 +1233,46 @@
         // ============================================
         // INICIALIZACIÓN
         // ============================================
-        // Carga inicial de datos
-        loadCategories().then(() => loadStock().then(() => loadProducts()));
-        updateCart();
-        loadRestaurantStatus();
+
+        async function initializeApp() {
+
+            try {
+
+                // Mostrar mensaje de carga
+                const menuContainer = document.getElementById('menuContainer');
+                if (menuContainer) {
+                    menuContainer.innerHTML = `
+                    <div style="text-align:center;padding:40px;color:#aaa;">
+                        ⏳ Cargando menú...
+                        <br><small>Si es tu primera vez puede tardar unos segundos</small>
+                    </div>`;
+                }
+
+                // Cargar todo en paralelo (mucho más rápido)
+                await Promise.all([
+                    loadCategories(),
+                    loadStock(),
+                    loadProducts()
+                ]);
+
+                updateCart();
+                loadRestaurantStatus();
+
+                console.log("✅ App cargada correctamente");
+
+            } catch (error) {
+
+                console.error("❌ Error iniciando la app:", error);
+
+            }
+
+        }
+
+        // iniciar aplicación
+        initializeApp();
+
+        // mantener servidor despierto
+        keepServerAwake();
 
         fetch('/api/orders', { cache: "no-store" })
         .then(r => r.json())
@@ -1313,6 +1369,50 @@
             loadRestaurantStatus();
         });
         console.log('✅ Sistema inicializado correctamente');
+
+
+
+        async function loadInitialData() {
+            try {
+
+                const [productsRes, stockRes] = await Promise.all([
+                    fetch('/api/products', { cache: "no-store" }),
+                    fetch('/api/stock', { cache: "no-store" })
+                ]);
+
+                const productsData = await productsRes.json();
+                const stockDataServer = await stockRes.json();
+
+                products = productsData;
+                stockData = stockDataServer;
+
+                prices = {};
+                for (let cat in products) {
+                    products[cat].forEach(p => prices[p.id] = p.price);
+                }
+
+                renderMenu();
+
+                if (USER_ROLE === "admin") renderProductsList();
+
+            } catch (err) {
+                console.error("❌ Error cargando datos iniciales:", err);
+            }
+        }
+
+
+
+        function keepServerAwake() {
+
+            setInterval(() => {
+
+                fetch('/api/products')
+                .then(() => console.log("🔄 Ping servidor"))
+                .catch(() => console.log("⚠️ servidor dormido"));
+
+            }, 5 * 60 * 1000);
+
+        }
     </script>
 </body>
 </html>

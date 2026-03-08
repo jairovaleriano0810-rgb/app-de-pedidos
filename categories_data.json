@@ -14,9 +14,5 @@
   "bebidas": {
     "name": "Bebidas",
     "emoji": "🥤"
-  },
-  "torta_de_pescado": {
-    "name": "Torta de Pescado",
-    "emoji": "🍴"
   }
 }
