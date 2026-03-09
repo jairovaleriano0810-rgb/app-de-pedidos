@@ -4,37 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pedidos - Sabor Ecuatoriano</title>
-    <button id="installApp" style="
-    display:none;
-    position:fixed;
-    bottom:20px;
-    right:20px;
-    background:linear-gradient(135deg,#FF6B35,#F7931E);
-    color:white;
-    border:none;
-    padding:14px 18px;
-    border-radius:12px;
-    font-weight:bold;
-    cursor:pointer;
-    box-shadow:0 10px 25px rgba(0,0,0,0.3);
-    z-index:9999;">
-    📱 Instalar App
-    </button>
 
     <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='notifications.css') }}">
-    <link rel="manifest" href="/manifest.json">
-
-    <meta name="theme-color" content="#ff6600">
-
-    <meta name="mobile-web-app-capable" content="yes">
-
-    <meta name="apple-mobile-web-app-capable" content="yes">
-
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-
-    <meta name="apple-mobile-web-app-title" content="Pedidos">
     
     <style>
         /* ============================================================
@@ -1294,63 +1267,6 @@
             }
 
         }
-
-
-
-
-
-        // ============================================
-        // PWA SERVICE WORKER
-        // ============================================
-
-        if ("serviceWorker" in navigator) {
-            window.addEventListener("load", () => {
-
-                navigator.serviceWorker.register("/service-worker.js")
-                .then(reg => {
-                    console.log("Service Worker registrado", reg);
-                })
-                .catch(err => {
-                    console.log("Error registrando Service Worker", err);
-                });
-
-            });
-        }
-
-
-
-
-        let deferredPrompt;
-
-        window.addEventListener("beforeinstallprompt", (e) => {
-
-            e.preventDefault();
-            deferredPrompt = e;
-
-            const btn = document.getElementById("installApp");
-            btn.style.display = "block";
-
-            btn.addEventListener("click", async () => {
-
-                btn.style.display = "none";
-
-                deferredPrompt.prompt();
-
-                const choice = await deferredPrompt.userChoice;
-
-                if (choice.outcome === "accepted") {
-                    console.log("App instalada");
-                }
-
-                deferredPrompt = null;
-            });
-
-        });
-
-
-
-
-
 
         // iniciar aplicación
         initializeApp();
